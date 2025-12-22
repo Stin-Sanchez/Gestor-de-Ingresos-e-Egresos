@@ -10,13 +10,13 @@ namespace GestorIngresosEgresos.Util
 {
     public class DBConnection
     {
-        // 1. La instancia estática (el Singleton)
+        //Instancia estática (el Singleton)
         private static DBConnection instancia;
 
-        // 2. El objeto que guarda la conexión real a MySQL
+        //Objeto que guarda la conexión real a MySQL
         private MySqlConnection connection;
 
-        // 3. Constructor PRIVADO
+        //Constructor PRIVADO
         private DBConnection()
         {
             try
