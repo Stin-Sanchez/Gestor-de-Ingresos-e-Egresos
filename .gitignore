@@ -35,6 +35,7 @@ bld/
 .vs/
 packages/
 # Ignorar conexión real
+GestorIngresosEgresos/Util/DBConnection.cs
 
 
 # Visual Studio 2015/2017 cache/options directory
