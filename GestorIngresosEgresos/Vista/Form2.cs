@@ -32,6 +32,8 @@ namespace GestorIngresosEgresos.Vista
         private CheckBox chkDarkMode;
         private TextBox txtBuscar;
         private ComboBox cboFiltroTipo;
+        private ComboBox cboMes;        // <-- Agregar esta
+        private NumericUpDown numAnio;  // <-- Agregar esta
         private Panel panelContenedor;
         private Panel panelControles;
 
@@ -171,10 +173,47 @@ namespace GestorIngresosEgresos.Vista
             cboFiltroTipo.SelectedIndex = 0;
             cboFiltroTipo.SelectedIndexChanged += CboFiltroTipo_SelectedIndexChanged;
 
+            Label lblPeriodo = new Label
+            {
+                Text = "🗓️ Periodo:",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(100, 116, 139),
+                Location = new Point(540, 5),
+                AutoSize = true
+            };
+
+            cboMes = new ComboBox
+            {
+                Location = new Point(540, 28),
+                Size = new Size(130, 30),
+                Font = new Font("Segoe UI", 10F),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White,
+                ForeColor = Color.FromArgb(30, 41, 59)
+            };
+            cboMes.Items.AddRange(new object[] {
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            });
+            cboMes.SelectedIndex = DateTime.Now.Month - 1; // Mes actual por defecto
+            cboMes.SelectedIndexChanged += CboPeriodo_SelectedIndexChanged;
+
+            numAnio = new NumericUpDown
+            {
+                Location = new Point(680, 28),
+                Size = new Size(90, 30),
+                Font = new Font("Segoe UI", 10F),
+                Minimum = 2000,
+                Maximum = 2100,
+                Value = DateTime.Now.Year
+            };
+            numAnio.ValueChanged += CboPeriodo_SelectedIndexChanged;
+
             btnRefrescar = new Button
             {
                 Text = "🔄 Refrescar",
-                Location = new Point(880, 22),
+                Location = new Point(790, 22),
                 Size = new Size(150, 30),
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 BackColor = Color.White,
@@ -201,7 +240,9 @@ namespace GestorIngresosEgresos.Vista
             btnNuevo.Click += BtnNuevo_Click;
 
             panelControles.Controls.AddRange(new Control[] {
-                lblBuscar, txtBuscar, lblFiltro, cboFiltroTipo, btnRefrescar, btnNuevo
+                lblBuscar, txtBuscar, lblFiltro, cboFiltroTipo,
+                lblPeriodo, cboMes, numAnio,
+                btnRefrescar, btnDeudas, btnNuevo
             });
 
             // Panel Tabla
@@ -461,7 +502,7 @@ namespace GestorIngresosEgresos.Vista
             if (dgvMovimientos.Columns[e.ColumnIndex].Name == "Monto")
             {
                 string valor = e.Value?.ToString() ?? "";
-                if (valor.StartsWith("+"))
+                if (valor.startsWith("+"))
                 {
                     e.CellStyle.ForeColor = Color.FromArgb(16, 185, 129); // Verde moderno
                 }
@@ -492,25 +533,23 @@ namespace GestorIngresosEgresos.Vista
         {
             try
             {
-                var resumen = controller.ObtenerResumenFinanciero();
+                var resumen = controller.ObtenerResumenPorMes((int)numAnio.Value, cboMes.SelectedIndex + 1);
 
                 lblBalanceMonto.Text = $"${resumen.BalanceTotal:N2}";
                 lblGastosMonto.Text = $"${resumen.TotalGastos:N2}";
                 lblIngresosMonto.Text = $"${resumen.TotalIngresos:N2}";
 
-                // Cambiar color del texto del balance según sea positivo o negativo
                 if (resumen.BalanceTotal >= 0)
                 {
-                    lblBalanceMonto.ForeColor = Color.FromArgb(16, 185, 129); // Verde
+                    lblBalanceMonto.ForeColor = Color.FromArgb(16, 185, 129);
                 }
                 else
                 {
-                    lblBalanceMonto.ForeColor = Color.FromArgb(239, 68, 68); // Rojo
+                    lblBalanceMonto.ForeColor = Color.FromArgb(239, 68, 68);
                 }
 
-                // Los otros montos siempre en sus colores
-                lblGastosMonto.ForeColor = Color.FromArgb(239, 68, 68); // Rojo
-                lblIngresosMonto.ForeColor = Color.FromArgb(16, 185, 129); // Verde
+                lblGastosMonto.ForeColor = Color.FromArgb(239, 68, 68);
+                lblIngresosMonto.ForeColor = Color.FromArgb(16, 185, 129);
             }
             catch (Exception ex)
             {
@@ -562,6 +601,7 @@ namespace GestorIngresosEgresos.Vista
             {
                 Movimiento mov = controller.ObtenerMovimientoPorId(movId);
          
+
                 if (mov != null)
                 {
                     string detalle = $"📅 Fecha: {mov.Fecha:dd/MM/yyyy}\n\n" +
@@ -669,11 +709,20 @@ namespace GestorIngresosEgresos.Vista
             AplicarFiltros();
         }
 
+        private void CboPeriodo_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            AplicarFiltros();
+            ActualizarTotales();
+        }
+
         private void AplicarFiltros()
         {
             try
             {
-                var movimientos = controller.ObtenerTodosLosMovimientos();
+                // Filtro base: periodo mensual seleccionado
+                int anio = (int)numAnio.Value;
+                int mes = cboMes.SelectedIndex + 1;
+                var movimientos = controller.ObtenerMovimientosPorMes(anio, mes);
 
                 // Filtro por tipo
                 if (cboFiltroTipo.SelectedIndex > 0)
@@ -891,6 +940,11 @@ namespace GestorIngresosEgresos.Vista
     
 
     private void Form2_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Form2_Load_1(object sender, EventArgs e)
         {
 
         }

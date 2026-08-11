@@ -23,13 +23,14 @@ namespace GestorIngresosEgresos.Util
             {
                 Console.WriteLine("--- Intentando conectar al servidor local ---");
 
-             
-                string servidor = "TU SERVER";
-                string baseDatos = "TU DB"; 
-                string usuario = "TU USER";
-                string password = "TU PASSWORD"; 
+                    string servidor = "127.0.0.1";
+                    string puerto = "3306"; // <-- Puerto agregado aquí
+                    string baseDatos = "GestorIngresosDB"; 
+                    string usuario = "root";
+                    string password = "root"; 
 
-                string cadenaConexion = $"Server={servidor};Database={baseDatos};Uid={usuario};Pwd={password};";
+                    // Se agrega Port={puerto}; a la cadena
+                    string cadenaConexion = $"Server={servidor};Port={puerto};Database={baseDatos};Uid={usuario};Pwd={password};";
 
                 connection = new MySqlConnection(cadenaConexion);
                 connection.Open();

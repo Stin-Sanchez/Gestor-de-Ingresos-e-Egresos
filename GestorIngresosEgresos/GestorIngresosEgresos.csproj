@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -105,25 +105,86 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controller\MovimientoController.cs" />
-    <Compile Include="Modelo\Movimiento.cs" />
+    <!-- Controllers -->
+    <Compile Include="Controller\DeudaController.cs" />
+    <Compile Include="Controller\GastoController.cs" />
+    <Compile Include="Controller\IngresoController.cs" />
+    <Compile Include="Controller\PeriodoController.cs" />
+    <Compile Include="Controller\UsuarioController.cs" />
+    <!-- Modelos -->
+    <Compile Include="Modelo\CategoriaGasto.cs" />
+    <Compile Include="Modelo\Deuda.cs" />
+    <Compile Include="Modelo\Gasto.cs" />
+    <Compile Include="Modelo\Ingreso.cs" />
+    <Compile Include="Modelo\Periodo.cs" />
+    <Compile Include="Modelo\Usuario.cs" />
+    <!-- Repositorios -->
+    <Compile Include="Repository\CategoriaRepository.cs" />
+    <Compile Include="Repository\DeudaRepository.cs" />
+    <Compile Include="Repository\GastoRepository.cs" />
+    <Compile Include="Repository\IngresoRepository.cs" />
+    <Compile Include="Repository\PeriodoRepository.cs" />
+    <Compile Include="Repository\Repository.cs" />
+    <Compile Include="Repository\UsuarioRepository.cs" />
+    <!-- Util -->
+    <Compile Include="Util\ConexionDB.cs" />
+    <Compile Include="Util\PasswordHelper.cs" />
+    <Compile Include="Util\PeriodoManager.cs" />
+    <Compile Include="Util\Sesion.cs" />
+    <!-- Entry point -->
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Repository\Repository.cs" />
-    <Compile Include="Repository\RepositoryImp.cs" />
-    <Compile Include="Util\ConexionDB.cs" />
-    <Compile Include="Util\DBConnection.cs" />
-    <Compile Include="Vista\Form2.cs">
+    <!-- Vistas -->
+    <Compile Include="Vista\FormAbono.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Vista\Form2.Designer.cs">
-      <DependentUpon>Form2.cs</DependentUpon>
+    <Compile Include="Vista\FormAbono.Designer.cs">
+      <DependentUpon>FormAbono.cs</DependentUpon>
     </Compile>
-    <Compile Include="Vista\FormMovimiento.cs">
+    <Compile Include="Vista\FormDashboard.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Vista\FormMovimiento.Designer.cs">
-      <DependentUpon>FormMovimiento.cs</DependentUpon>
+    <Compile Include="Vista\FormDeudas.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormDeudas.Designer.cs">
+      <DependentUpon>FormDeudas.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormGasto.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormGasto.Designer.cs">
+      <DependentUpon>FormGasto.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormHistorialAbonos.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormHistorialAbonos.Designer.cs">
+      <DependentUpon>FormHistorialAbonos.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormIngreso.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormIngreso.Designer.cs">
+      <DependentUpon>FormIngreso.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormLogin.Designer.cs">
+      <DependentUpon>FormLogin.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormNuevaDeuda.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormNuevaDeuda.Designer.cs">
+      <DependentUpon>FormNuevaDeuda.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vista\FormPeriodo.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vista\FormPeriodo.Designer.cs">
+      <DependentUpon>FormPeriodo.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -135,11 +196,11 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Vista\Form2.resx">
-      <DependentUpon>Form2.cs</DependentUpon>
+    <EmbeddedResource Include="Vista\FormDeudas.resx">
+      <DependentUpon>FormDeudas.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Vista\FormMovimiento.resx">
-      <DependentUpon>FormMovimiento.cs</DependentUpon>
+    <EmbeddedResource Include="Vista\FormPeriodo.resx">
+      <DependentUpon>FormPeriodo.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

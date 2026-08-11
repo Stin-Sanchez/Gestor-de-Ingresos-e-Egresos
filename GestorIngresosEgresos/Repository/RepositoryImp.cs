@@ -18,7 +18,7 @@ namespace GestorIngresosEgresos.Repository
         public RepositoryImp()
         {
             //Obtenemos la conexion singleton que manejara todas las transacciones
-            connection = DBConnection.GetInstance().GetConnection();
+            connection = ConexionDB.GetInstance().GetConnection();
         }
 
         public Movimiento actualizarMovimiento(Movimiento t)

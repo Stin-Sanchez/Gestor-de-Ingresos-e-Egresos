@@ -34,8 +34,15 @@ bld/
 [Ll]ogs/
 .vs/
 packages/
-# Ignorar conexi�n real
+# Ignorar conexión real
 GestorIngresosEgresos/Util/DBConnection.cs
+
+# Claude Code
+.claude/
+
+# Carpetas de build (explícitas para forzar ignorado aunque estén trackeadas)
+GestorIngresosEgresos/bin/
+GestorIngresosEgresos/obj/
 
 
 # Visual Studio 2015/2017 cache/options directory

@@ -1,4 +1,7 @@
-﻿
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+
 namespace GestorIngresosEgresos.Vista
 {
     partial class Form2
@@ -33,19 +36,12 @@ namespace GestorIngresosEgresos.Vista
             // 
             // Form2
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(284, 261);
             this.Name = "Form2";
-            this.Text = "Form2";
-            this.Load += new System.EventHandler(this.Form2_Load);
+            this.Load += new System.EventHandler(this.Form2_Load_1);
             this.ResumeLayout(false);
 
-
-
         }
-
-        
 
         #endregion
     }
