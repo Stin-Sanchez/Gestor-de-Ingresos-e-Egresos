@@ -34,6 +34,7 @@ namespace GestorIngresosEgresos.Vista
         {
             InitializeComponent();
             ConstruirUI();
+            if (Program.AppIcon != null) this.Icon = Program.AppIcon;
         }
 
         private void ConstruirUI()
