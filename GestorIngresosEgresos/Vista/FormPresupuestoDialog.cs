@@ -89,7 +89,7 @@ namespace GestorIngresosEgresos.Vista
             }
 
             _nudMonto = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0.01m, Maximum = 9999999m, DecimalPlaces = 2, ThousandsSeparator = true };
-            if (_esEdicion) _nudMonto.Value = montoActual;
+            if (_esEdicion) _nudMonto.Value = Math.Max(_nudMonto.Minimum, Math.Min(_nudMonto.Maximum, montoActual));
 
             tlp.Controls.Add(Lbl("Categoria:"), 0, 0); tlp.Controls.Add(categoriaControl, 1, 0);
             tlp.Controls.Add(Lbl("Monto ($):"), 0, 1); tlp.Controls.Add(_nudMonto,        1, 1);
