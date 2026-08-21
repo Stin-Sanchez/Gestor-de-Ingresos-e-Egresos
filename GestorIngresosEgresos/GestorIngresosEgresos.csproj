@@ -161,6 +161,9 @@
     <Compile Include="Vista\FormGasto.Designer.cs">
       <DependentUpon>FormGasto.cs</DependentUpon>
     </Compile>
+    <Compile Include="Vista\FormPresupuestoDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Vista\FormHistorialAbonos.cs">
       <SubType>Form</SubType>
     </Compile>
