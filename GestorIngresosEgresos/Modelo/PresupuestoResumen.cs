@@ -4,10 +4,12 @@ namespace GestorIngresosEgresos.Modelo
 {
     public enum EstadoPresupuesto { OK, ALERTA, CRITICO, EXCEDIDO }
 
+    // Estado de consumo de un sobre. El sobre es un Gasto con EsSobre = true:
+    // Limite es el monto que separaste, Gastado es la suma de sus consumos.
     public class PresupuestoResumen
     {
-        public int Id { get; set; }
-        public int CategoriaId { get; set; }
+        public int GastoId { get; set; }
+        public string Titulo { get; set; }
         public string CategoriaNombre { get; set; }
         public decimal Limite { get; set; }
         public decimal Gastado { get; set; }

@@ -22,70 +22,42 @@ namespace GestorIngresosEgresos.Controller
         public List<Gasto> ObtenerAbonosPorDeuda(int deudaId) => _repo.ObtenerAbonosPorDeuda(deudaId);
         public List<CategoriaGasto> ObtenerCategorias()       => _catRepo.ObtenerTodas();
 
-        public Gasto Guardar(Gasto g, out string avisoPresupuesto)
+        public Gasto Guardar(Gasto g)
         {
             if (g.Monto <= 0)
                 throw new ArgumentException("El monto debe ser mayor a cero.");
             if (string.IsNullOrWhiteSpace(g.Descripcion))
                 throw new ArgumentException("La descripcion es obligatoria.");
             if (g.Fecha == default) g.Fecha = DateTime.Today;
-
-            ValidarPresupuesto(g, excludeGastoId: null);
-
-            _repo.Guardar(g);
-            avisoPresupuesto = CalcularAviso(g);
-            return g;
+            return _repo.Guardar(g);
         }
 
-        public void Actualizar(Gasto g, out string avisoPresupuesto)
+        public void Actualizar(Gasto g)
         {
             if (g.Monto <= 0) throw new ArgumentException("El monto debe ser mayor a cero.");
+            if (string.IsNullOrWhiteSpace(g.Descripcion))
+                throw new ArgumentException("La descripcion es obligatoria.");
 
-            ValidarPresupuesto(g, excludeGastoId: g.Id);
-
+            ValidarContraConsumos(g);
             _repo.Actualizar(g);
-            avisoPresupuesto = CalcularAviso(g);
         }
 
         public void Eliminar(int id) => _repo.Eliminar(id);
 
-        private void ValidarPresupuesto(Gasto g, int? excludeGastoId)
+        // Un sobre no puede quedar por debajo de lo que ya se consumio de el, ni dejar de
+        // ser sobre mientras tenga consumos: en ambos casos el registro quedaria incoherente.
+        private void ValidarContraConsumos(Gasto g)
         {
-            if (!g.CategoriaId.HasValue) return;
+            decimal consumido = _presRepo.ObtenerConsumido(g.Id, null);
+            if (consumido <= 0) return;
 
-            var presupuesto = _presRepo.ObtenerPorCategoria(g.PeriodoId, g.CategoriaId.Value);
-            if (presupuesto == null) return;
+            if (!g.EsSobre)
+                throw new ArgumentException(
+                    $"Este egreso ya tiene ${consumido:N2} en consumos registrados. Elimina esos consumos antes de dejar de tratarlo como sobre.");
 
-            decimal gastadoActual = _presRepo.ObtenerGastado(g.PeriodoId, g.CategoriaId.Value, excludeGastoId);
-            if (!PresupuestoResumen.Excede(g.Monto, presupuesto.Monto, gastadoActual)) return;
-
-            decimal disponible = presupuesto.Monto - gastadoActual;
-            string  categoria  = NombreCategoria(g.CategoriaId.Value);
-            throw new ArgumentException(disponible <= 0
-                ? $"Ya agotaste tu presupuesto de {categoria} este mes. Ajustalo antes de registrar mas gastos."
-                : $"Este gasto supera tu presupuesto de {categoria}. Disponible: ${disponible:N2}.");
+            if (g.Monto < consumido)
+                throw new ArgumentException(
+                    $"Ya consumiste ${consumido:N2} de este sobre, asi que no puedes bajarlo a ${g.Monto:N2}.");
         }
-
-        private string CalcularAviso(Gasto g)
-        {
-            if (!g.CategoriaId.HasValue) return null;
-
-            var presupuesto = _presRepo.ObtenerPorCategoria(g.PeriodoId, g.CategoriaId.Value);
-            if (presupuesto == null || presupuesto.Monto <= 0) return null;
-
-            decimal gastado     = _presRepo.ObtenerGastado(g.PeriodoId, g.CategoriaId.Value, null);
-            decimal porcentaje  = Math.Floor(gastado / presupuesto.Monto * 100m);
-            decimal disponible  = presupuesto.Monto - gastado;
-            string  categoria   = NombreCategoria(g.CategoriaId.Value);
-
-            if (porcentaje >= 100)
-                return $"Has agotado tu presupuesto de {categoria} este mes.";
-            if (porcentaje >= 50)
-                return $"Has consumido el {porcentaje:N0}% de tu presupuesto de {categoria}. Te quedan ${disponible:N2}.";
-            return null;
-        }
-
-        private string NombreCategoria(int categoriaId) =>
-            _catRepo.ObtenerTodas().Find(c => c.Id == categoriaId)?.Nombre ?? "esta categoria";
     }
 }
