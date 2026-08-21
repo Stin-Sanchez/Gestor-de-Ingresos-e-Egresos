@@ -1,4 +1,4 @@
-using GestorIngresosEgresos.Modelo;
+﻿using GestorIngresosEgresos.Modelo;
 using GestorIngresosEgresos.Vista;
 using System;
 using System.Drawing;

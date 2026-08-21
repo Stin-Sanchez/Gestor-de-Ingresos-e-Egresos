@@ -57,9 +57,13 @@ namespace GestorIngresosEgresos.Controller
             if (presupuesto == null) return;
 
             decimal gastadoActual = _presRepo.ObtenerGastado(g.PeriodoId, g.CategoriaId.Value, excludeGastoId);
-            decimal disponible    = presupuesto.Monto - gastadoActual;
-            if (g.Monto > disponible)
-                throw new ArgumentException($"Este gasto supera tu presupuesto de {NombreCategoria(g.CategoriaId.Value)}. Disponible: ${disponible:N2}.");
+            if (!PresupuestoResumen.Excede(g.Monto, presupuesto.Monto, gastadoActual)) return;
+
+            decimal disponible = presupuesto.Monto - gastadoActual;
+            string  categoria  = NombreCategoria(g.CategoriaId.Value);
+            throw new ArgumentException(disponible <= 0
+                ? $"Ya agotaste tu presupuesto de {categoria} este mes. Ajustalo antes de registrar mas gastos."
+                : $"Este gasto supera tu presupuesto de {categoria}. Disponible: ${disponible:N2}.");
         }
 
         private string CalcularAviso(Gasto g)
@@ -70,7 +74,7 @@ namespace GestorIngresosEgresos.Controller
             if (presupuesto == null || presupuesto.Monto <= 0) return null;
 
             decimal gastado     = _presRepo.ObtenerGastado(g.PeriodoId, g.CategoriaId.Value, null);
-            decimal porcentaje  = Math.Round(gastado / presupuesto.Monto * 100m, 0);
+            decimal porcentaje  = Math.Floor(gastado / presupuesto.Monto * 100m);
             decimal disponible  = presupuesto.Monto - gastado;
             string  categoria   = NombreCategoria(g.CategoriaId.Value);
 

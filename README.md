@@ -26,6 +26,14 @@ Una herramienta sencilla y funcional para la gestión de finanzas personales. Di
     <img width="1920" height="1040" alt="image" src="https://github.com/user-attachments/assets/ff88b00c-64dd-4ddc-b365-5cadb530304a" />
 
 
+## 🗃️ Migraciones
+
+Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `GestorIngresosDB`:
+
+1. `migration.sql`
+2. `migration_v2.sql`
+3. `migration_v3.sql` — agrega la tabla `presupuestos`; requerida para la funcion de presupuestos y tambien para registrar gastos, ya que el guardado de gastos consulta esa tabla.
+
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*
 

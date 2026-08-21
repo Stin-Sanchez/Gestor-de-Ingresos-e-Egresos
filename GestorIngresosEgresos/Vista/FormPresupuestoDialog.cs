@@ -88,7 +88,7 @@ namespace GestorIngresosEgresos.Vista
                 categoriaControl = _cboCategoria;
             }
 
-            _nudMonto = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0.01m, Maximum = 9999999m, DecimalPlaces = 2, ThousandsSeparator = true };
+            _nudMonto = new NumericUpDown { Dock = DockStyle.Fill, Minimum = 0m, Maximum = 9999999m, DecimalPlaces = 2, ThousandsSeparator = true };
             if (_esEdicion) _nudMonto.Value = Math.Max(_nudMonto.Minimum, Math.Min(_nudMonto.Maximum, montoActual));
 
             tlp.Controls.Add(Lbl("Categoria:"), 0, 0); tlp.Controls.Add(categoriaControl, 1, 0);

@@ -141,7 +141,7 @@ namespace GestorIngresosEgresos.Vista
                 r.Estado == EstadoPresupuesto.CRITICO  ? C_CRITICO  :
                 r.Estado == EstadoPresupuesto.ALERTA   ? C_ALERTA   : C_OK;
 
-            var card = new Panel { Size = new Size(260, 150), Margin = new Padding(0, 0, 14, 14), BackColor = C_SURFACE };
+            var card = new Panel { Size = new Size(260, 168), Margin = new Padding(0, 0, 14, 14), BackColor = C_SURFACE };
             card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle,
                 C_BORDER, 1, ButtonBorderStyle.Solid, C_BORDER, 1, ButtonBorderStyle.Solid,
                 C_BORDER, 1, ButtonBorderStyle.Solid, C_BORDER, 1, ButtonBorderStyle.Solid);
@@ -169,19 +169,19 @@ namespace GestorIngresosEgresos.Vista
             };
             var lblPorcentaje = new Label
             {
-                Text = $"{r.Porcentaje:N0}%", Location = new Point(14, 82), AutoSize = true,
+                Text = $"{r.PorcentajeMostrado:N0}%", Location = new Point(14, 82), AutoSize = true,
                 Font = new Font("Segoe UI", 16F, FontStyle.Bold), ForeColor = colorEstado
             };
             var lblDisponible = new Label
             {
                 Text = r.Disponible >= 0 ? $"Disponible: ${r.Disponible:N2}" : $"Excedido por: ${-r.Disponible:N2}",
-                Location = new Point(14, 112), AutoSize = true,
+                Location = new Point(14, 108), AutoSize = true,
                 Font = new Font("Segoe UI", 9F), ForeColor = C_MUTED
             };
 
             var btnEditar = new Button
             {
-                Text = "Editar", Size = new Size(60, 24), Location = new Point(122, 112),
+                Text = "Editar", Size = new Size(60, 24), Location = new Point(14, 130),
                 Font = new Font("Segoe UI", 8F), ForeColor = C_MUTED, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
             };
             btnEditar.FlatAppearance.BorderSize = 0;
@@ -189,7 +189,7 @@ namespace GestorIngresosEgresos.Vista
 
             var btnEliminar = new Button
             {
-                Text = "Eliminar", Size = new Size(70, 24), Location = new Point(182, 112),
+                Text = "Eliminar", Size = new Size(70, 24), Location = new Point(78, 130),
                 Font = new Font("Segoe UI", 8F), ForeColor = C_EXCEDIDO, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
             };
             btnEliminar.FlatAppearance.BorderSize = 0;

@@ -6,7 +6,7 @@
 
 USE GestorIngresosDB;
 
-CREATE TABLE presupuestos (
+CREATE TABLE IF NOT EXISTS presupuestos (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     periodo_id   INT           NOT NULL,
     categoria_id INT           NOT NULL,
