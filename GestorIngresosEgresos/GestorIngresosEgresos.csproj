@@ -111,6 +111,7 @@
     <Compile Include="Controller\GastoController.cs" />
     <Compile Include="Controller\IngresoController.cs" />
     <Compile Include="Controller\PeriodoController.cs" />
+    <Compile Include="Controller\PresupuestoController.cs" />
     <Compile Include="Controller\UsuarioController.cs" />
     <!-- Modelos -->
     <Compile Include="Modelo\CategoriaGasto.cs" />
