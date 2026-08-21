@@ -118,6 +118,8 @@
     <Compile Include="Modelo\Gasto.cs" />
     <Compile Include="Modelo\Ingreso.cs" />
     <Compile Include="Modelo\Periodo.cs" />
+    <Compile Include="Modelo\Presupuesto.cs" />
+    <Compile Include="Modelo\PresupuestoResumen.cs" />
     <Compile Include="Modelo\Usuario.cs" />
     <!-- Repositorios -->
     <Compile Include="Repository\CategoriaRepository.cs" />
