@@ -49,14 +49,17 @@ namespace GestorIngresosEgresos.Vista
                 TextAlign = ContentAlignment.MiddleCenter
             });
 
-            var btnIngresos = CrearNavBtn("Ingresos y Egresos");
-            var btnDeudas   = CrearNavBtn("Deudas");
+            var btnIngresos     = CrearNavBtn("Ingresos y Egresos");
+            var btnPresupuestos = CrearNavBtn("Presupuestos");
+            var btnDeudas       = CrearNavBtn("Deudas");
 
-            btnIngresos.Click += (s, e) => { AbrirForm(new FormPeriodo()); MarcarActivo(btnIngresos); };
-            btnDeudas.Click   += (s, e) => { AbrirForm(new FormDeudas()); MarcarActivo(btnDeudas); };
+            btnIngresos.Click     += (s, e) => { AbrirForm(new FormPeriodo()); MarcarActivo(btnIngresos); };
+            btnPresupuestos.Click += (s, e) => { AbrirForm(new FormPresupuestos()); MarcarActivo(btnPresupuestos); };
+            btnDeudas.Click       += (s, e) => { AbrirForm(new FormDeudas()); MarcarActivo(btnDeudas); };
 
             var panelNav = new Panel { Dock = DockStyle.Fill, BackColor = C_SIDEBAR };
             panelNav.Controls.Add(btnDeudas);
+            panelNav.Controls.Add(btnPresupuestos);
             panelNav.Controls.Add(btnIngresos);
 
             var btnSalir = new Button
