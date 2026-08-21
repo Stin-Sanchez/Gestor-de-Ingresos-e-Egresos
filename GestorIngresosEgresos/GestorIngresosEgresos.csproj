@@ -127,6 +127,7 @@
     <Compile Include="Repository\GastoRepository.cs" />
     <Compile Include="Repository\IngresoRepository.cs" />
     <Compile Include="Repository\PeriodoRepository.cs" />
+    <Compile Include="Repository\PresupuestoRepository.cs" />
     <Compile Include="Repository\Repository.cs" />
     <Compile Include="Repository\UsuarioRepository.cs" />
     <!-- Util -->
