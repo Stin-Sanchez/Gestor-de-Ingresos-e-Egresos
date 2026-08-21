@@ -126,8 +126,10 @@ namespace GestorIngresosEgresos.Vista
 
         private void MostrarTarjetas(List<PresupuestoResumen> resumen)
         {
+            foreach (Control c in _panelTarjetas.Controls) c.Dispose();
             _panelTarjetas.Controls.Clear();
             _lblVacio.Visible = resumen.Count == 0;
+            if (_lblVacio.Visible) _lblVacio.BringToFront();
             foreach (var r in resumen)
                 _panelTarjetas.Controls.Add(CrearTarjeta(r));
         }
