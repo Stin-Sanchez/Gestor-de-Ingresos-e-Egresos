@@ -360,7 +360,12 @@ namespace GestorIngresosEgresos.Vista
                     };
                     using (var form = new FormGasto(_periodo.Id, _gastoCtrl.ObtenerCategorias(), existing))
                         if (form.ShowDialog() == DialogResult.OK)
-                            { _gastoCtrl.Actualizar(form.Resultado); CargarTabla(); }
+                        {
+                            _gastoCtrl.Actualizar(form.Resultado, out string aviso);
+                            CargarTabla();
+                            if (aviso != null)
+                                MessageBox.Show(aviso, "Presupuesto", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
                 }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
@@ -394,7 +399,13 @@ namespace GestorIngresosEgresos.Vista
             using (var form = new FormGasto(_periodo.Id, _gastoCtrl.ObtenerCategorias()))
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    try { _gastoCtrl.Guardar(form.Resultado); CargarTabla(); }
+                    try
+                    {
+                        _gastoCtrl.Guardar(form.Resultado, out string aviso);
+                        CargarTabla();
+                        if (aviso != null)
+                            MessageBox.Show(aviso, "Presupuesto", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                     catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
                 }
         }
