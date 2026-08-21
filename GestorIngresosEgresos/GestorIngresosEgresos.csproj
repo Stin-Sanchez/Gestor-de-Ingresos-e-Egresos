@@ -188,6 +188,9 @@
     <Compile Include="Vista\FormNuevaDeuda.Designer.cs">
       <DependentUpon>FormNuevaDeuda.cs</DependentUpon>
     </Compile>
+    <Compile Include="Vista\FormPresupuestos.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Vista\FormPeriodo.cs">
       <SubType>Form</SubType>
     </Compile>
