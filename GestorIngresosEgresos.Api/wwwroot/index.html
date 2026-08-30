@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestor de Ingresos y Egresos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ── Login ─────────────────────────────────────────────────────────── -->
+<div id="login-view" class="d-flex align-items-center justify-content-center">
+  <div class="card shadow-sm" style="width: 22rem;">
+    <div class="card-body p-4">
+      <h1 class="h4 mb-3 text-center">Gestor Financiero</h1>
+      <form id="login-form">
+        <div class="mb-3">
+          <label class="form-label">Usuario</label>
+          <input type="text" class="form-control" id="login-username" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contraseña</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="login-password" required>
+            <button class="btn btn-outline-secondary" type="button" id="toggle-password">👁</button>
+          </div>
+        </div>
+        <div id="login-error" class="alert alert-danger py-2 d-none"></div>
+        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── App ───────────────────────────────────────────────────────────── -->
+<div id="app-view" class="d-none">
+  <div class="d-flex">
+    <nav class="sidebar d-none d-md-flex flex-column p-3" style="width: 240px;">
+      <h2 class="h5 text-white mb-4">💰 Gestor</h2>
+      <ul class="nav nav-pills flex-column mb-auto gap-1" id="nav-menu">
+        <li class="nav-item"><a href="#periodo" class="nav-link" data-view="periodo">📅 Ingresos y Egresos</a></li>
+        <li class="nav-item"><a href="#presupuestos" class="nav-link" data-view="presupuestos">📦 Presupuestos</a></li>
+        <li class="nav-item"><a href="#deudas" class="nav-link" data-view="deudas">💳 Deudas</a></li>
+      </ul>
+      <hr class="text-secondary">
+      <div class="text-secondary small mb-2" id="nav-username"></div>
+      <button class="btn btn-outline-light btn-sm w-100" id="btn-logout">Cerrar sesión</button>
+    </nav>
+
+    <main class="flex-grow-1">
+      <nav class="navbar navbar-dark bg-dark d-md-none">
+        <div class="container-fluid">
+          <span class="navbar-brand">💰 Gestor</span>
+          <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-nav">☰</button>
+        </div>
+      </nav>
+      <div class="offcanvas offcanvas-start bg-dark" tabindex="-1" id="mobile-nav">
+        <div class="offcanvas-body p-3">
+          <ul class="nav nav-pills flex-column gap-1" id="nav-menu-mobile">
+            <li class="nav-item"><a href="#periodo" class="nav-link" data-view="periodo">📅 Ingresos y Egresos</a></li>
+            <li class="nav-item"><a href="#presupuestos" class="nav-link" data-view="presupuestos">📦 Presupuestos</a></li>
+            <li class="nav-item"><a href="#deudas" class="nav-link" data-view="deudas">💳 Deudas</a></li>
+          </ul>
+          <hr class="text-secondary">
+          <button class="btn btn-outline-light btn-sm w-100" id="btn-logout-mobile">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div class="p-3 p-md-4">
+        <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;"></div>
+
+        <section id="view-periodo" class="view d-none"></section>
+        <section id="view-presupuestos" class="view d-none"></section>
+        <section id="view-deudas" class="view d-none"></section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal generico: cada vista rellena #app-modal-body y #app-modal-title antes de mostrarlo. -->
+<div class="modal fade" id="app-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="app-modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="app-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
