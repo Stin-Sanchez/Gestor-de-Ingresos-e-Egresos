@@ -1,11 +1,10 @@
 import { api } from "./api.js";
-import { money, dateInputValue, toast, confirmar, ESTADO_LABEL } from "./ui.js";
+import { money, dateInputValue, fechaCorta, esc, toast, confirmar, ESTADO_LABEL } from "./ui.js";
 import { openModal, closeModal } from "./modal.js";
 
 let sobres = [];
-let seleccionado = null;
+let seleccionadoId = null;
 let consumos = [];
-let chart = null;
 
 export async function render(container) {
   const hoy = new Date();
@@ -17,127 +16,128 @@ export async function render(container) {
   }
 
   if (!periodo) {
-    container.innerHTML = `<div class="alert alert-secondary">No hay periodo activo este mes.</div>`;
+    container.innerHTML = `<h1 class="h5 fw-semibold mb-3">Presupuestos</h1>
+      <div class="surface empty-state"><i class="bi bi-calendar-x d-block fs-4 mb-2"></i>No hay periodo activo este mes.</div>`;
     return;
   }
 
   sobres = await api.get(`/periodos/${periodo.id}/sobres`);
-  seleccionado = sobres.find(s => s.gastoId === seleccionado?.gastoId) ?? sobres[0] ?? null;
-  consumos = seleccionado ? await api.get(`/gastos/${seleccionado.gastoId}/consumos`) : [];
+  const sel = sobres.find(s => s.gastoId === seleccionadoId) ?? sobres[0] ?? null;
+  seleccionadoId = sel?.gastoId ?? null;
+  consumos = sel ? await api.get(`/gastos/${sel.gastoId}/consumos`) : [];
 
-  container.innerHTML = vista();
+  container.innerHTML = vista(sel);
   bind(container);
 }
 
-function vista() {
+function vista(sel) {
+  if (!sobres.length) {
+    return `<h1 class="h5 fw-semibold mb-3">Presupuestos</h1>
+      <div class="surface empty-state">
+        <i class="bi bi-wallet2 d-block fs-4 mb-2"></i>
+        Todavía no tienes sobres.<br>
+        <span style="font-size:.8125rem">Marca un egreso como “sobre” en Movimientos para verlo aquí.</span>
+      </div>`;
+  }
+
   return `
-    <h1 class="h4 mb-3">📦 Presupuestos (sobres)</h1>
-    ${sobres.length === 0 ? `<div class="alert alert-secondary">Marca un egreso como "sobre" en la vista de Ingresos y Egresos para verlo aquí.</div>` : ""}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h5 fw-semibold mb-0">Presupuestos</h1>
+      <span class="text-muted-app" style="font-size:.8125rem">${sobres.length} sobre${sobres.length === 1 ? "" : "s"}</span>
+    </div>
     <div class="row g-3">
-      <div class="col-md-5">
-        <div class="d-flex flex-column gap-2" id="lista-sobres">
-          ${sobres.map(sobreCardHtml).join("")}
-        </div>
+      <div class="col-lg-5">
+        <div class="d-flex flex-column gap-2">${sobres.map(sobreCard).join("")}</div>
       </div>
-      <div class="col-md-7">
-        ${seleccionado ? detalleHtml() : ""}
+      <div class="col-lg-7">${sel ? detalle(sel) : ""}</div>
+    </div>`;
+}
+
+function sobreCard(s) {
+  const activo = s.gastoId === seleccionadoId;
+  return `
+    <div class="surface sobre-card p-3 ${activo ? "selected" : ""}" data-id="${s.gastoId}">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+        <div class="min-w-0">
+          <div class="fw-medium text-truncate">${esc(s.titulo)}</div>
+          <div class="text-muted-app" style="font-size:.75rem">${esc(s.categoriaNombre || "Sin categoría")}</div>
+        </div>
+        <span class="chip chip-${s.estado}">${ESTADO_LABEL[s.estado]}</span>
+      </div>
+      <div class="progress my-2"><div class="progress-bar estado-${s.estado}" style="width:${Math.min(s.porcentajeMostrado, 100)}%"></div></div>
+      <div class="d-flex justify-content-between numeric" style="font-size:.8125rem">
+        <span class="text-muted-app">${money(s.gastado)} de ${money(s.limite)}</span>
+        <span>${s.porcentajeMostrado}%</span>
       </div>
     </div>`;
 }
 
-function sobreCardHtml(s) {
-  const activo = s.gastoId === seleccionado?.gastoId;
+function detalle(s) {
   return `
-    <div class="card sobre-card ${activo ? "selected" : ""}" data-id="${s.gastoId}">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <strong>${s.titulo}</strong>
-          <span class="badge badge-estado-${s.estado}">${ESTADO_LABEL[s.estado]}</span>
+    <div class="surface">
+      <div class="p-3" style="border-bottom:1px solid var(--app-border)">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+          <div>
+            <div class="label">Disponible en “${esc(s.titulo)}”</div>
+            <div class="tile-value numeric ${s.disponible <= 0 ? "text-neg" : "text-pos"}">${money(s.disponible)}</div>
+            <div class="text-muted-app numeric mt-1" style="font-size:.8125rem">
+              Consumido ${money(s.gastado)} · Límite ${money(s.limite)}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-nuevo-consumo" ${s.disponible <= 0 ? "disabled" : ""}>
+            <i class="bi bi-plus-lg me-1"></i>Consumo
+          </button>
         </div>
-        <div class="text-muted small mb-2">${s.categoriaNombre || "Sin categoría"}</div>
-        <div class="progress mb-1"><div class="progress-bar estado-${s.estado}" style="width:${Math.min(s.porcentajeMostrado, 100)}%"></div></div>
-        <div class="d-flex justify-content-between small">
-          <span>${money(s.gastado)} de ${money(s.limite)}</span>
-          <span>${s.porcentajeMostrado}%</span>
-        </div>
+        <div class="progress mt-3"><div class="progress-bar estado-${s.estado}" style="width:${Math.min(s.porcentajeMostrado, 100)}%"></div></div>
       </div>
-    </div>`;
-}
-
-function detalleHtml() {
-  return `
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="h5 mb-0">${seleccionado.titulo} — Disponible: ${money(seleccionado.disponible)}</h2>
-          <button class="btn btn-primary btn-sm" id="btn-nuevo-consumo">+ Consumo</button>
-        </div>
-        <canvas id="chart-sobre" height="120"></canvas>
-        <table class="table table-sm mt-3">
-          <thead><tr><th>Fecha</th><th>Descripción</th><th class="text-end">Monto</th><th></th></tr></thead>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead><tr><th style="width:5rem">Fecha</th><th>Descripción</th><th class="text-end">Monto</th><th style="width:4.5rem"></th></tr></thead>
           <tbody>
             ${consumos.map(c => `
-              <tr data-id="${c.id}">
-                <td>${c.fecha.slice(0, 10)}</td><td>${c.descripcion}</td>
-                <td class="text-end">${money(c.monto)}</td>
-                <td class="text-end">
-                  <button class="btn btn-sm btn-outline-secondary btn-editar">✏</button>
-                  <button class="btn btn-sm btn-outline-danger btn-eliminar">🗑</button>
-                </td>
-              </tr>`).join("") || `<tr><td colspan="4" class="text-muted text-center py-3">Sin consumos</td></tr>`}
+              <tr data-cid="${c.id}">
+                <td class="text-muted-app numeric" style="font-size:.8125rem">${fechaCorta(c.fecha)}</td>
+                <td>${esc(c.descripcion)}</td>
+                <td class="text-end numeric fw-medium">${money(c.monto)}</td>
+                <td class="text-end"><span class="row-actions">
+                  <button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-icon danger btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
+                </span></td>
+              </tr>`).join("") || `<tr><td colspan="4" class="empty-state">Sin consumos registrados</td></tr>`}
           </tbody>
         </table>
       </div>
     </div>`;
 }
 
-function dibujarChart() {
-  if (!seleccionado) return;
-  const ctx = document.getElementById("chart-sobre");
-  if (!ctx) return;
-  chart?.destroy();
-  chart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Consumido", "Disponible"],
-      datasets: [{
-        data: [seleccionado.gastado, Math.max(seleccionado.disponible, 0)],
-        backgroundColor: ["#fd7e14", "#198754"],
-      }],
-    },
-    options: { plugins: { legend: { position: "bottom" } } },
-  });
-}
-
 function bind(container) {
-  for (const card of document.querySelectorAll("#lista-sobres .sobre-card")) {
+  for (const card of container.querySelectorAll(".sobre-card")) {
     card.onclick = async () => {
-      seleccionado = sobres.find(s => s.gastoId === Number(card.dataset.id));
+      seleccionadoId = Number(card.dataset.id);
       await render(container);
     };
   }
 
-  const btnNuevo = document.getElementById("btn-nuevo-consumo");
-  if (btnNuevo) btnNuevo.onclick = () => formConsumo(container);
+  container.querySelector("#btn-nuevo-consumo")?.addEventListener("click", () => formConsumo(container));
 
-  for (const tr of document.querySelectorAll("tbody tr[data-id]")) {
-    const id = Number(tr.dataset.id);
+  for (const tr of container.querySelectorAll("tr[data-cid]")) {
+    const id = Number(tr.dataset.cid);
     tr.querySelector(".btn-editar").onclick = () => formConsumo(container, consumos.find(c => c.id === id));
     tr.querySelector(".btn-eliminar").onclick = () => eliminar(container, id);
   }
-
-  dibujarChart();
 }
 
 function formConsumo(container, c) {
   const body = openModal(c ? "Editar consumo" : "Nuevo consumo", `
-    <div class="mb-3"><label class="form-label">Monto</label>
-      <input type="number" step="0.01" min="0" class="form-control" id="f-monto" value="${c?.monto ?? ""}"></div>
-    <div class="mb-3"><label class="form-label">Fecha</label>
-      <input type="date" class="form-control" id="f-fecha" value="${dateInputValue(c?.fecha)}"></div>
-    <div class="mb-3"><label class="form-label">Descripción</label>
-      <input type="text" class="form-control" id="f-desc" value="${c?.descripcion ?? ""}"></div>
-    <button class="btn btn-primary w-100" id="f-guardar">Guardar</button>`);
+    <div class="row g-3">
+      <div class="col-7"><label class="form-label" for="f-monto">Monto</label>
+        <input type="number" step="0.01" min="0" class="form-control" id="f-monto" value="${c?.monto ?? ""}" autofocus></div>
+      <div class="col-5"><label class="form-label" for="f-fecha">Fecha</label>
+        <input type="date" class="form-control" id="f-fecha" value="${dateInputValue(c?.fecha)}"></div>
+      <div class="col-12"><label class="form-label" for="f-desc">Descripción</label>
+        <input type="text" class="form-control" id="f-desc" value="${esc(c?.descripcion ?? "")}"></div>
+      <div class="col-12"><button class="btn btn-primary w-100" id="f-guardar">Guardar</button></div>
+    </div>`);
 
   body.querySelector("#f-guardar").onclick = async () => {
     const payload = {
@@ -148,7 +148,7 @@ function formConsumo(container, c) {
     try {
       const resultado = c
         ? await api.put(`/consumos/${c.id}`, payload)
-        : await api.post(`/gastos/${seleccionado.gastoId}/consumos`, payload);
+        : await api.post(`/gastos/${seleccionadoId}/consumos`, payload);
       closeModal();
       await render(container);
       toast(resultado.aviso ?? "Consumo guardado.", resultado.aviso ? "warning" : "success");
@@ -161,6 +161,6 @@ async function eliminar(container, id) {
   try {
     await api.del(`/consumos/${id}`);
     await render(container);
-    toast("Eliminado.", "success");
+    toast("Consumo eliminado.");
   } catch (e) { toast(e.message, "danger"); }
 }
