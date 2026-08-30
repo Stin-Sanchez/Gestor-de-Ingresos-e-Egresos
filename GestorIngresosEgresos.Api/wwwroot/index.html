@@ -45,44 +45,55 @@
         <!-- Paso 1: entrar o crear cuenta -->
         <div id="auth-credenciales">
           <div class="seg mb-4">
-            <button type="button" class="seg-btn active" data-modo="entrar">Entrar</button>
-            <button type="button" class="seg-btn" data-modo="registro">Crear cuenta</button>
+            <button type="button" class="seg-btn active" data-modo="entrar"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</button>
+            <button type="button" class="seg-btn" data-modo="registro"><i class="bi bi-person-plus me-1"></i>Crear cuenta</button>
           </div>
 
           <form id="form-entrar">
             <div class="mb-3">
               <label class="form-label" for="in-usuario">Usuario</label>
-              <input type="text" class="form-control" id="in-usuario" required autocomplete="username">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control" id="in-usuario" required autocomplete="username">
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label" for="in-password">Contraseña</label>
               <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
                 <input type="password" class="form-control" id="in-password" required autocomplete="current-password">
                 <button class="btn btn-quiet" type="button" data-toggle-pass="in-password" aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</button>
           </form>
 
           <form id="form-registro" class="d-none">
             <div class="mb-3">
               <label class="form-label" for="re-usuario">Usuario</label>
-              <input type="text" class="form-control" id="re-usuario" required autocomplete="username">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control" id="re-usuario" required autocomplete="username">
+              </div>
               <div class="form-text">3 a 50 caracteres: letras, números, punto, guion o guion bajo.</div>
             </div>
             <div class="mb-3">
               <label class="form-label" for="re-email">Correo <span class="text-muted-app fw-normal">(opcional)</span></label>
-              <input type="email" class="form-control" id="re-email" autocomplete="email">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control" id="re-email" autocomplete="email">
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label" for="re-password">Contraseña</label>
               <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
                 <input type="password" class="form-control" id="re-password" required autocomplete="new-password">
                 <button class="btn btn-quiet" type="button" data-toggle-pass="re-password" aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
               </div>
               <div class="form-text">Mínimo 8 caracteres.</div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Crear cuenta</button>
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus me-1"></i>Crear cuenta</button>
           </form>
         </div>
 
@@ -96,8 +107,8 @@
           <form id="form-2fa">
             <input type="text" class="form-control codigo-input mb-3" id="in-codigo"
                    inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required>
-            <button type="submit" class="btn btn-primary w-100">Verificar</button>
-            <button type="button" class="btn btn-quiet w-100 mt-2" id="btn-cancelar-2fa">Cancelar</button>
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-circle me-1"></i>Verificar</button>
+            <button type="button" class="btn btn-quiet w-100 mt-2" id="btn-cancelar-2fa"><i class="bi bi-arrow-left me-1"></i>Cancelar</button>
           </form>
         </div>
 
