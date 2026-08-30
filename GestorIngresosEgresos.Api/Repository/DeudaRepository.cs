@@ -31,12 +31,13 @@ public class DeudaRepository(Db db)
 
     public Deuda Guardar(Deuda d)
     {
-        const string sql = @"INSERT INTO deudas (usuario_id, nombre, acreedor, monto_original, monto_pagado, fecha_inicio, fecha_vencimiento, estado, descripcion)
-                           VALUES (@uid, @nombre, @acreedor, @montoOrig, 0, @fechaIni, @fechaVenc, 'ACTIVA', @desc);
+        const string sql = @"INSERT INTO deudas (usuario_id, tipo, nombre, acreedor, monto_original, monto_pagado, fecha_inicio, fecha_vencimiento, estado, descripcion)
+                           VALUES (@uid, @tipo, @nombre, @acreedor, @montoOrig, 0, @fechaIni, @fechaVenc, 'ACTIVA', @desc);
                            SELECT LAST_INSERT_ID();";
         using var conn = db.Open();
         using var cmd = new MySqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("@uid", d.UsuarioId);
+        cmd.Parameters.AddWithValue("@tipo", d.Tipo.ToString());
         cmd.Parameters.AddWithValue("@nombre", d.Nombre);
         cmd.Parameters.AddWithValue("@acreedor", d.Acreedor);
         cmd.Parameters.AddWithValue("@montoOrig", d.MontoOriginal);
@@ -57,36 +58,36 @@ public class DeudaRepository(Db db)
         cmd.ExecuteNonQuery();
     }
 
-    // Transaccion: crea Gasto (abono) en el periodo indicado y actualiza la deuda.
+    // Transaccion: registra el pago en el periodo indicado y actualiza la deuda.
+    // Una deuda que debo se salda con un gasto; una que me deben, con un ingreso,
+    // para que el saldo del periodo se mueva en la direccion correcta.
     // El caller (DeudaService) ya valido que el periodo y la deuda son del mismo usuario.
-    public Gasto RegistrarAbono(int deudaId, int periodoId, int? categoriaId, decimal monto, string? descripcion)
+    public Deuda.Movimiento RegistrarPago(TipoDeuda tipo, int deudaId, int periodoId, int? categoriaId, decimal monto, string? descripcion)
     {
+        string sqlPago = tipo == TipoDeuda.DEBO
+            ? @"INSERT INTO gastos (periodo_id, categoria_id, deuda_id, monto, fecha, descripcion)
+                VALUES (@pid, @cat, @did, @monto, @fecha, @desc);
+                SELECT LAST_INSERT_ID();"
+            : @"INSERT INTO ingresos (periodo_id, deuda_id, monto, fecha, descripcion, tipo)
+                VALUES (@pid, @did, @monto, @fecha, @desc, 'OTRO');
+                SELECT LAST_INSERT_ID();";
+
         using var conn = db.Open();
         using var tx = conn.BeginTransaction();
         try
         {
-            const string sqlGasto = @"INSERT INTO gastos (periodo_id, categoria_id, deuda_id, monto, fecha, descripcion)
-                                VALUES (@pid, @cat, @did, @monto, @fecha, @desc);
-                                SELECT LAST_INSERT_ID();";
-            Gasto gasto;
-            using (var cmd = new MySqlCommand(sqlGasto, conn, tx))
+            var hoy = DateTime.Today;
+            int pagoId;
+            using (var cmd = new MySqlCommand(sqlPago, conn, tx))
             {
                 cmd.Parameters.AddWithValue("@pid", periodoId);
-                cmd.Parameters.AddWithValue("@cat", (object?)categoriaId ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@did", deudaId);
                 cmd.Parameters.AddWithValue("@monto", monto);
-                cmd.Parameters.AddWithValue("@fecha", DateTime.Today);
+                cmd.Parameters.AddWithValue("@fecha", hoy);
                 cmd.Parameters.AddWithValue("@desc", descripcion ?? "");
-                int gastoId = Convert.ToInt32(cmd.ExecuteScalar());
-                gasto = new Gasto
-                {
-                    Id = gastoId,
-                    PeriodoId = periodoId,
-                    DeudaId = deudaId,
-                    Monto = monto,
-                    Fecha = DateTime.Today,
-                    Descripcion = descripcion ?? ""
-                };
+                if (tipo == TipoDeuda.DEBO)
+                    cmd.Parameters.AddWithValue("@cat", (object?)categoriaId ?? DBNull.Value);
+                pagoId = Convert.ToInt32(cmd.ExecuteScalar());
             }
 
             const string sqlDeuda = @"UPDATE deudas
@@ -101,13 +102,70 @@ public class DeudaRepository(Db db)
             }
 
             tx.Commit();
-            return gasto;
+            return new Deuda.Movimiento(pagoId, hoy, monto, descripcion ?? "");
         }
         catch
         {
             tx.Rollback();
             throw;
         }
+    }
+
+    // Borrar el gasto/ingreso de un pago sin devolverle el monto a la deuda la dejaria
+    // reportando mas pagado de lo que tiene. Ambas cosas van en la misma transaccion.
+    public void EliminarPago(TipoDeuda tipo, int deudaId, int movimientoId, decimal monto)
+    {
+        string tabla = tipo == TipoDeuda.DEBO ? "gastos" : "ingresos";
+
+        using var conn = db.Open();
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            using (var cmd = new MySqlCommand($"DELETE FROM {tabla} WHERE id = @id", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", movimientoId);
+                cmd.ExecuteNonQuery();
+            }
+
+            const string sqlDeuda = @"UPDATE deudas
+                                SET monto_pagado = GREATEST(monto_pagado - @monto, 0),
+                                    estado = CASE WHEN monto_pagado - @monto >= monto_original THEN 'PAGADA' ELSE 'ACTIVA' END
+                                WHERE id = @did";
+            using (var cmd = new MySqlCommand(sqlDeuda, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@monto", monto);
+                cmd.Parameters.AddWithValue("@did", deudaId);
+                cmd.ExecuteNonQuery();
+            }
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
+    // El historial sale de gastos o de ingresos segun el tipo de la deuda.
+    public List<Deuda.Movimiento> ObtenerPagos(int usuarioId, TipoDeuda tipo, int deudaId)
+    {
+        string tabla = tipo == TipoDeuda.DEBO ? "gastos" : "ingresos";
+        string sql = $@"SELECT m.id, m.fecha, m.monto, m.descripcion
+                        FROM {tabla} m
+                        JOIN periodos p ON p.id = m.periodo_id
+                        WHERE m.deuda_id = @did AND p.usuario_id = @uid
+                        ORDER BY m.fecha DESC, m.id DESC";
+
+        var lista = new List<Deuda.Movimiento>();
+        using var conn = db.Open();
+        using var cmd = new MySqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@did", deudaId);
+        cmd.Parameters.AddWithValue("@uid", usuarioId);
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            lista.Add(new Deuda.Movimiento(r.GetInt32("id"), r.GetDateTime("fecha"), r.GetDecimal("monto"), r.GetString("descripcion")));
+        return lista;
     }
 
     private static Deuda Mapear(MySqlDataReader r)
@@ -117,6 +175,7 @@ public class DeudaRepository(Db db)
         {
             Id = r.GetInt32("id"),
             UsuarioId = r.GetInt32("usuario_id"),
+            Tipo = (TipoDeuda)Enum.Parse(typeof(TipoDeuda), r.GetString("tipo")),
             Nombre = r.GetString("nombre"),
             Acreedor = r.GetString("acreedor"),
             MontoOriginal = r.GetDecimal("monto_original"),

@@ -46,10 +46,10 @@ function vista(sel) {
       <span class="text-muted-app" style="font-size:.8125rem">${sobres.length} sobre${sobres.length === 1 ? "" : "s"}</span>
     </div>
     <div class="row g-3">
-      <div class="col-lg-5">
+      <div class="col-12 col-lg-5 col-xxl-4">
         <div class="d-flex flex-column gap-2">${sobres.map(sobreCard).join("")}</div>
       </div>
-      <div class="col-lg-7">${sel ? detalle(sel) : ""}</div>
+      <div class="col-12 col-lg-7 col-xxl-8">${sel ? detalle(sel) : ""}</div>
     </div>`;
 }
 
@@ -91,7 +91,7 @@ function detalle(s) {
         <div class="progress mt-3"><div class="progress-bar estado-${s.estado}" style="width:${Math.min(s.porcentajeMostrado, 100)}%"></div></div>
       </div>
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover tabla-compacta">
           <thead><tr><th style="width:5rem">Fecha</th><th>Descripción</th><th class="text-end">Monto</th><th style="width:4.5rem"></th></tr></thead>
           <tbody>
             ${consumos.map(c => `

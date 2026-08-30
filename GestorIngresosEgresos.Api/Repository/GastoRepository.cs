@@ -39,24 +39,6 @@ public class GastoRepository(Db db)
         return r.Read() ? Mapear(r) : null;
     }
 
-    public List<Gasto> ObtenerAbonosPorDeuda(int usuarioId, int deudaId)
-    {
-        var lista = new List<Gasto>();
-        const string sql = @"SELECT g.*, c.nombre AS cat_nombre
-                           FROM gastos g
-                           JOIN periodos p ON p.id = g.periodo_id
-                           LEFT JOIN categorias_gasto c ON g.categoria_id = c.id
-                           WHERE g.deuda_id = @did AND p.usuario_id = @uid
-                           ORDER BY g.fecha DESC";
-        using var conn = db.Open();
-        using var cmd = new MySqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@did", deudaId);
-        cmd.Parameters.AddWithValue("@uid", usuarioId);
-        using var r = cmd.ExecuteReader();
-        while (r.Read()) lista.Add(Mapear(r));
-        return lista;
-    }
-
     public Gasto Guardar(Gasto g)
     {
         const string sql = @"INSERT INTO gastos (periodo_id, categoria_id, deuda_id, monto, fecha, descripcion, es_sobre)

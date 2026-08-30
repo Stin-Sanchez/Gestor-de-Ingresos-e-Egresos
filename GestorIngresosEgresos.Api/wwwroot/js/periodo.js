@@ -2,12 +2,16 @@ import { api } from "./api.js";
 import { money, dateInputValue, fechaCorta, esc, toast, confirmar } from "./ui.js";
 import { openModal, closeModal } from "./modal.js";
 
+const POR_PAGINA = 12;
+
 let cursor = new Date(); // mes que se esta mostrando
 let periodo = null;
 let ingresos = [];
 let gastos = [];
 let categorias = [];
 let chart = null;
+let busqueda = "";
+let pagina = 1;
 
 export async function render(container) {
   if (!categorias.length) categorias = await api.get("/categorias");
@@ -39,6 +43,8 @@ async function cargarPeriodo(container) {
     api.get(`/periodos/${periodo.id}/gastos`),
   ]);
 
+  busqueda = "";
+  pagina = 1;
   container.innerHTML = vista();
   bind(container);
 }
@@ -60,6 +66,20 @@ function totales() {
   return { totalIngresos, totalGastos, saldo };
 }
 
+// Ingresos y gastos se muestran juntos, ordenados por fecha, como una sola cuenta.
+function movimientos() {
+  const todos = [
+    ...ingresos.map(i => ({ ...i, __tipo: "ingreso" })),
+    ...gastos.map(g => ({ ...g, __tipo: "gasto" })),
+  ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id);
+
+  if (!busqueda) return todos;
+  const q = busqueda.toLowerCase();
+  return todos.filter(m =>
+    (m.descripcion || "").toLowerCase().includes(q) ||
+    (m.categoriaNombre || "").toLowerCase().includes(q));
+}
+
 function cabecera(titulo, conSueldo) {
   return `
     <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -67,15 +87,13 @@ function cabecera(titulo, conSueldo) {
       <h1 class="h5 mb-0 fw-semibold">${esc(titulo)}</h1>
       <button class="btn btn-icon" id="btn-next-mes" title="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
       ${conSueldo ? `<button class="btn btn-quiet btn-sm ms-auto" id="btn-editar-sueldo">
-          <i class="bi bi-pencil me-1"></i> Sueldo base: ${money(periodo.sueldoBase)}
+          <i class="bi bi-pencil me-1"></i><span class="d-none d-sm-inline">Sueldo base: </span>${money(periodo.sueldoBase)}
         </button>` : ""}
     </div>`;
 }
 
 function vista() {
   const { totalIngresos, totalGastos, saldo } = totales();
-  const filas = [...ingresos.map(i => ({ ...i, __tipo: "ingreso" })), ...gastos.map(g => ({ ...g, __tipo: "gasto" }))]
-    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id);
 
   return `
     ${cabecera(periodo.nombre, true)}
@@ -87,30 +105,23 @@ function vista() {
     </div>
 
     <div class="row g-3">
-      <div class="col-lg-8">
+      <div class="col-12 col-xl-8">
         <div class="surface">
           <div class="d-flex justify-content-between align-items-center gap-2 p-3 flex-wrap" style="border-bottom:1px solid var(--app-border)">
             <div class="input-group input-group-sm" style="max-width:260px">
               <span class="input-group-text bg-transparent" style="border-color:var(--app-border)"><i class="bi bi-search text-muted-app"></i></span>
-              <input type="search" class="form-control" id="buscar" placeholder="Buscar movimiento…">
+              <input type="search" class="form-control" id="buscar" placeholder="Buscar…">
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-quiet btn-sm" id="btn-nuevo-ingreso"><i class="bi bi-plus-lg me-1 text-pos"></i>Ingreso</button>
               <button class="btn btn-quiet btn-sm" id="btn-nuevo-gasto"><i class="bi bi-plus-lg me-1 text-neg"></i>Egreso</button>
             </div>
           </div>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead><tr><th style="width:5rem">Fecha</th><th>Descripción</th><th class="text-end">Monto</th><th style="width:4.5rem"></th></tr></thead>
-              <tbody id="tabla-movimientos">
-                ${filas.map(filaHtml).join("") || `<tr><td colspan="4" class="empty-state">Sin movimientos este mes</td></tr>`}
-              </tbody>
-            </table>
-          </div>
+          <div id="zona-tabla">${tablaHtml()}</div>
         </div>
       </div>
 
-      <div class="col-lg-4">
+      <div class="col-12 col-xl-4">
         <div class="surface p-3">
           <div class="label mb-3">Gastos por categoría</div>
           ${gastos.length ? `<canvas id="chart-categorias" height="220"></canvas>` : `<div class="empty-state py-4">Sin gastos</div>`}
@@ -120,7 +131,7 @@ function vista() {
 }
 
 function tile(label, valor, clase) {
-  return `<div class="col-sm-4">
+  return `<div class="col-12 col-sm-4">
       <div class="surface tile">
         <div class="label">${label}</div>
         <div class="tile-value numeric ${clase}">${money(valor)}</div>
@@ -128,28 +139,62 @@ function tile(label, valor, clase) {
     </div>`;
 }
 
+function tablaHtml() {
+  const filas = movimientos();
+  const paginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
+  if (pagina > paginas) pagina = paginas;
+
+  const desde = (pagina - 1) * POR_PAGINA;
+  const pagina_actual = filas.slice(desde, desde + POR_PAGINA);
+
+  return `
+    <div class="table-responsive">
+      <table class="table table-hover tabla-compacta">
+        <thead><tr><th style="width:5rem">Fecha</th><th>Descripción</th><th class="text-end">Monto</th><th style="width:4.5rem"></th></tr></thead>
+        <tbody id="tabla-movimientos">
+          ${pagina_actual.map(filaHtml).join("")
+            || `<tr><td colspan="4" class="empty-state">${busqueda ? "Ningún movimiento coincide" : "Sin movimientos este mes"}</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    ${filas.length > POR_PAGINA ? paginacionHtml(filas.length, paginas, desde, pagina_actual.length) : ""}`;
+}
+
+function paginacionHtml(total, paginas, desde, enPagina) {
+  return `
+    <div class="d-flex justify-content-between align-items-center gap-2 p-3 flex-wrap" style="border-top:1px solid var(--app-border)">
+      <span class="text-muted-app numeric" style="font-size:.8125rem">${desde + 1}–${desde + enPagina} de ${total}</span>
+      <div class="d-flex align-items-center gap-1">
+        <button class="btn btn-icon" id="btn-pag-prev" ${pagina === 1 ? "disabled" : ""} title="Anterior"><i class="bi bi-chevron-left"></i></button>
+        <span class="numeric px-2" style="font-size:.8125rem">${pagina} / ${paginas}</span>
+        <button class="btn btn-icon" id="btn-pag-next" ${pagina === paginas ? "disabled" : ""} title="Siguiente"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>`;
+}
+
 function filaHtml(m) {
   const esIngreso = m.__tipo === "ingreso";
-  const etiqueta = esIngreso
-    ? `<span class="chip chip-neutral">${m.tipo}</span>`
+  const ligadoADeuda = esIngreso ? m.esCobro : m.esAbono;
+
+  const etiqueta = ligadoADeuda ? `<span class="chip chip-neutral">${esIngreso ? "Cobro" : "Abono"}</span>`
+    : esIngreso ? `<span class="chip chip-neutral">${m.tipo}</span>`
     : m.esSobre ? `<span class="chip chip-neutral">Sobre</span>`
-    : m.esAbono ? `<span class="chip chip-neutral">Abono</span>`
     : m.categoriaNombre ? `<span class="text-muted-app" style="font-size:.75rem">${esc(m.categoriaNombre)}</span>` : "";
 
   return `
-    <tr data-id="${m.id}" data-tipo="${m.__tipo}" data-desc="${esc((m.descripcion || "").toLowerCase())}">
+    <tr data-id="${m.id}" data-tipo="${m.__tipo}">
       <td class="text-muted-app numeric" style="font-size:.8125rem">${fechaCorta(m.fecha)}</td>
       <td>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <i class="bi ${esIngreso ? "bi-arrow-down-left text-pos" : "bi-arrow-up-right text-neg"}"></i>
-          <span>${esc(m.descripcion)}</span>
+          <span class="text-break">${esc(m.descripcion)}</span>
           ${etiqueta}
         </div>
       </td>
       <td class="text-end numeric fw-medium ${esIngreso ? "text-pos" : ""}">${esIngreso ? "+" : "−"}${money(m.monto)}</td>
       <td class="text-end">
         <span class="row-actions">
-          <button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>
+          ${ligadoADeuda ? "" : `<button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>`}
           <button class="btn btn-icon danger btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
         </span>
       </td>
@@ -197,6 +242,29 @@ function bindNav(container) {
   document.getElementById("btn-next-mes").onclick = () => cambiarMes(container, 1);
 }
 
+// Solo repinta la tabla: el grafico y la busqueda no deben perderse al pasar de pagina.
+function repintarTabla(container) {
+  container.querySelector("#zona-tabla").innerHTML = tablaHtml();
+  bindTabla(container);
+}
+
+function bindTabla(container) {
+  container.querySelector("#btn-pag-prev")?.addEventListener("click", () => {
+    if (pagina > 1) { pagina--; repintarTabla(container); }
+  });
+  container.querySelector("#btn-pag-next")?.addEventListener("click", () => {
+    pagina++; repintarTabla(container);
+  });
+
+  for (const tr of container.querySelectorAll("#tabla-movimientos tr[data-id]")) {
+    const id = Number(tr.dataset.id);
+    const tipo = tr.dataset.tipo;
+    tr.querySelector(".btn-editar")?.addEventListener("click", () =>
+      tipo === "ingreso" ? formIngreso(container, ingresos.find(i => i.id === id)) : formGasto(container, gastos.find(g => g.id === id)));
+    tr.querySelector(".btn-eliminar").onclick = () => eliminar(container, tipo, id);
+  }
+}
+
 function bind(container) {
   bindNav(container);
   document.getElementById("btn-editar-sueldo").onclick = () => editarSueldo(container);
@@ -204,19 +272,12 @@ function bind(container) {
   document.getElementById("btn-nuevo-gasto").onclick = () => formGasto(container);
 
   document.getElementById("buscar").oninput = (e) => {
-    const q = e.target.value.toLowerCase();
-    for (const tr of document.querySelectorAll("#tabla-movimientos tr[data-id]"))
-      tr.style.display = tr.dataset.desc.includes(q) ? "" : "none";
+    busqueda = e.target.value;
+    pagina = 1;
+    repintarTabla(container);
   };
 
-  for (const tr of document.querySelectorAll("#tabla-movimientos tr[data-id]")) {
-    const id = Number(tr.dataset.id);
-    const tipo = tr.dataset.tipo;
-    tr.querySelector(".btn-editar").onclick = () =>
-      tipo === "ingreso" ? formIngreso(container, ingresos.find(i => i.id === id)) : formGasto(container, gastos.find(g => g.id === id));
-    tr.querySelector(".btn-eliminar").onclick = () => eliminar(container, tipo, id);
-  }
-
+  bindTabla(container);
   dibujarChart();
 }
 

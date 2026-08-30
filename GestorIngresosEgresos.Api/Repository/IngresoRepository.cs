@@ -80,13 +80,18 @@ public class IngresoRepository(Db db)
         cmd.ExecuteNonQuery();
     }
 
-    private static Ingreso Mapear(MySqlDataReader r) => new()
+    private static Ingreso Mapear(MySqlDataReader r)
     {
-        Id = r.GetInt32("id"),
-        PeriodoId = r.GetInt32("periodo_id"),
-        Monto = r.GetDecimal("monto"),
-        Fecha = r.GetDateTime("fecha"),
-        Descripcion = r.GetString("descripcion"),
-        Tipo = (TipoIngreso)Enum.Parse(typeof(TipoIngreso), r.GetString("tipo"))
-    };
+        int deudaOrd = r.GetOrdinal("deuda_id");
+        return new Ingreso
+        {
+            Id = r.GetInt32("id"),
+            PeriodoId = r.GetInt32("periodo_id"),
+            DeudaId = r.IsDBNull(deudaOrd) ? null : r.GetInt32(deudaOrd),
+            Monto = r.GetDecimal("monto"),
+            Fecha = r.GetDateTime("fecha"),
+            Descripcion = r.GetString("descripcion"),
+            Tipo = (TipoIngreso)Enum.Parse(typeof(TipoIngreso), r.GetString("tipo"))
+        };
+    }
 }

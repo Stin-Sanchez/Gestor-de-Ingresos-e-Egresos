@@ -225,6 +225,37 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
 
 .empty-state { color: var(--app-muted); font-size: .875rem; padding: 2rem 0; text-align: center; }
 
+/* ── Tablas en movil ──────────────────────────────────────────────────────
+   Cuatro columnas no caben en un telefono: cada fila pasa a ser una tarjeta de
+   dos por dos (descripcion / monto arriba, fecha / acciones abajo). */
+@media (max-width: 575.98px) {
+  .tabla-compacta thead { display: none; }
+
+  .tabla-compacta tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .25rem .75rem;
+    padding: .75rem;
+    border-bottom: 1px solid var(--app-border);
+  }
+  .tabla-compacta tbody tr:last-child { border-bottom: 0; }
+
+  .tabla-compacta tbody td {
+    border: 0 !important;
+    padding: 0 !important;
+    min-width: 0;
+  }
+
+  /* fecha */        .tabla-compacta tbody td:nth-child(1) { grid-area: 2 / 1; }
+  /* descripcion */  .tabla-compacta tbody td:nth-child(2) { grid-area: 1 / 1; }
+  /* monto */        .tabla-compacta tbody td:nth-child(3) { grid-area: 1 / 2; }
+  /* acciones */     .tabla-compacta tbody td:nth-child(4) { grid-area: 2 / 2; }
+
+  /* La fila de "sin resultados" ocupa el ancho completo, no la rejilla. */
+  .tabla-compacta tbody td[colspan] { grid-column: 1 / -1; }
+}
+
 /* ── Acceso ───────────────────────────────────────────────────────────── */
 .auth-logo {
   width: 3rem;
