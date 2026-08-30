@@ -1,14 +1,17 @@
 import { api, ApiError } from "./api.js";
+import { initTema } from "./tema.js";
 import * as periodoView from "./periodo.js";
 import * as presupuestosView from "./presupuestos.js";
 import * as deudasView from "./deudas.js";
 
 const views = { periodo: periodoView, presupuestos: presupuestosView, deudas: deudasView };
+let vistaActual = null;
 
 async function boot() {
+  // Al cambiar de tema hay que repintar: Chart.js dibuja en canvas y no hereda CSS.
+  initTema(() => vistaActual && navigate(vistaActual));
   try {
-    const me = await api.get("/auth/me");
-    showApp(me);
+    showApp(await api.get("/auth/me"));
   } catch {
     showLogin();
   }
@@ -22,12 +25,13 @@ function showLogin() {
 function showApp(me) {
   document.getElementById("login-view").classList.add("d-none");
   document.getElementById("app-view").classList.remove("d-none");
-  document.getElementById("nav-username").textContent = `👤 ${me.username}`;
+  document.getElementById("nav-username").textContent = me.username;
   navigate(location.hash.slice(1) || "periodo");
 }
 
 async function navigate(name) {
   if (!views[name]) name = "periodo";
+  vistaActual = name;
   location.hash = name;
 
   for (const link of document.querySelectorAll("[data-view]"))
@@ -35,9 +39,11 @@ async function navigate(name) {
   for (const section of document.querySelectorAll(".view"))
     section.classList.add("d-none");
 
+  bootstrap.Offcanvas.getInstance(document.getElementById("mobile-nav"))?.hide();
+
   const section = document.getElementById(`view-${name}`);
   section.classList.remove("d-none");
-  section.innerHTML = `<div class="text-muted">Cargando...</div>`;
+  section.innerHTML = `<div class="empty-state"><i class="bi bi-hourglass"></i> Cargando…</div>`;
   await views[name].render(section);
 }
 
@@ -59,9 +65,11 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("toggle-password").addEventListener("click", () => {
+document.getElementById("toggle-password").addEventListener("click", (e) => {
   const input = document.getElementById("login-password");
-  input.type = input.type === "password" ? "text" : "password";
+  const visible = input.type === "text";
+  input.type = visible ? "password" : "text";
+  e.currentTarget.querySelector("i").className = visible ? "bi bi-eye" : "bi bi-eye-slash";
 });
 
 async function logout() {

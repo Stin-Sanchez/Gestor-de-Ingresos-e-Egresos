@@ -1,34 +1,226 @@
+/* Sistema minimalista: pocos tokens, un solo acento, superficies planas con borde de 1px.
+   El tema lo maneja Bootstrap 5.3 via data-bs-theme; aqui solo se redefinen los tokens. */
 :root {
-  --sidebar-bg: #1e2432;
-  --sidebar-fg: #cbd3e1;
-  --accent: #4f7cff;
+  --app-bg: #fbfbfc;
+  --app-surface: #ffffff;
+  --app-border: #e8eaed;
+  --app-text: #14171f;
+  --app-muted: #6b7280;
+  --app-accent: #2f6df6;
+  --app-pos: #0d9c6e;
+  --app-neg: #dc3a4b;
+  --app-sidebar: #ffffff;
 }
 
-body { background: #f4f6f9; }
+[data-bs-theme="dark"] {
+  --app-bg: #0e1014;
+  --app-surface: #161920;
+  --app-border: #262a33;
+  --app-text: #e6e8ec;
+  --app-muted: #8b93a1;
+  --app-accent: #5b8cff;
+  --app-pos: #2fbd8b;
+  --app-neg: #f4707f;
+  --app-sidebar: #12151b;
+}
 
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-size: .9375rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Tipografia ───────────────────────────────────────────────────────── */
+.label {
+  font-size: .6875rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+  font-weight: 500;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+
+.text-pos { color: var(--app-pos) !important; }
+.text-neg { color: var(--app-neg) !important; }
+.text-muted-app { color: var(--app-muted) !important; }
+
+/* ── Superficies ──────────────────────────────────────────────────────── */
+.surface {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: .625rem;
+}
+
+.card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: .625rem;
+  box-shadow: none;
+}
+
+/* ── Login ────────────────────────────────────────────────────────────── */
 #login-view { min-height: 100vh; }
+#login-view .card { width: 21rem; }
 
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
 .sidebar {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-fg);
+  background: var(--app-sidebar);
+  border-right: 1px solid var(--app-border);
+  width: 228px;
   min-height: 100vh;
+  position: sticky;
+  top: 0;
 }
-.sidebar .nav-link { color: var(--sidebar-fg); border-radius: .5rem; }
-.sidebar .nav-link.active, .sidebar .nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
 
-.tile { border-radius: .75rem; }
+.brand {
+  font-size: .9375rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--app-text);
+}
 
-.sobre-card { cursor: pointer; border-radius: .75rem; }
-.sobre-card.selected { outline: 2px solid var(--accent); }
+.sidebar .nav-link,
+.offcanvas .nav-link {
+  color: var(--app-muted);
+  border-radius: .5rem;
+  padding: .5rem .75rem;
+  font-size: .875rem;
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+}
 
-.progress { height: .6rem; border-radius: .5rem; }
+.sidebar .nav-link:hover,
+.offcanvas .nav-link:hover {
+  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+  color: var(--app-text);
+}
 
-.estado-OK { background-color: #198754 !important; }
-.estado-ALERTA { background-color: #ffc107 !important; }
-.estado-CRITICO { background-color: #fd7e14 !important; }
-.estado-EXCEDIDO { background-color: #dc3545 !important; }
+.sidebar .nav-link.active,
+.offcanvas .nav-link.active {
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+  color: var(--app-accent);
+  font-weight: 500;
+}
 
-.badge-estado-OK { background-color: #198754; }
-.badge-estado-ALERTA { background-color: #ffc107; color: #222; }
-.badge-estado-CRITICO { background-color: #fd7e14; }
-.badge-estado-EXCEDIDO { background-color: #dc3545; }
+.sidebar .nav-link i,
+.offcanvas .nav-link i { font-size: 1rem; }
+
+/* ── Tiles de resumen ─────────────────────────────────────────────────── */
+.tile { padding: 1rem 1.125rem; }
+.tile .tile-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: .25rem;
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────── */
+.table {
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+.table > thead th {
+  font-size: .6875rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--app-border);
+  padding: .625rem .75rem;
+}
+.table > tbody td {
+  border-bottom: 1px solid var(--app-border);
+  padding: .625rem .75rem;
+  vertical-align: middle;
+}
+.table > tbody tr:last-child td { border-bottom: 0; }
+.table-hover > tbody > tr:hover > * {
+  background: color-mix(in srgb, var(--app-text) 3%, transparent);
+}
+
+/* Acciones por fila: discretas hasta el hover. */
+.row-actions { opacity: 0; transition: opacity .12s ease; white-space: nowrap; }
+tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
+@media (hover: none) { .row-actions { opacity: 1; } }
+
+.btn-icon {
+  --bs-btn-padding-x: .4rem;
+  --bs-btn-padding-y: .2rem;
+  color: var(--app-muted);
+  border: 0;
+  background: transparent;
+  line-height: 1;
+}
+.btn-icon:hover { color: var(--app-text); background: color-mix(in srgb, var(--app-text) 7%, transparent); }
+.btn-icon.danger:hover { color: var(--app-neg); background: color-mix(in srgb, var(--app-neg) 10%, transparent); }
+
+/* ── Sobres ───────────────────────────────────────────────────────────── */
+.sobre-card { cursor: pointer; transition: border-color .12s ease; }
+.sobre-card:hover { border-color: color-mix(in srgb, var(--app-text) 18%, transparent); }
+.sobre-card.selected { border-color: var(--app-accent); }
+
+.progress {
+  height: .3125rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+.progress-bar { border-radius: 999px; }
+
+.estado-OK { background-color: var(--app-pos); }
+.estado-ALERTA { background-color: #d9a406; }
+.estado-CRITICO { background-color: #e07b26; }
+.estado-EXCEDIDO { background-color: var(--app-neg); }
+
+/* Chips de estado: contorno tenue en vez de badges saturados. */
+.chip {
+  font-size: .6875rem;
+  font-weight: 500;
+  padding: .125rem .5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  line-height: 1.4;
+}
+.chip-OK { color: var(--app-pos); }
+.chip-ALERTA { color: #b8890a; }
+.chip-CRITICO { color: #d1701f; }
+.chip-EXCEDIDO { color: var(--app-neg); }
+.chip-neutral { color: var(--app-muted); }
+
+/* ── Controles ────────────────────────────────────────────────────────── */
+.form-control, .form-select {
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+  font-size: .875rem;
+}
+.form-control:focus, .form-select:focus {
+  background: var(--app-surface);
+  color: var(--app-text);
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-accent) 18%, transparent);
+}
+.form-label { font-size: .8125rem; font-weight: 500; margin-bottom: .3125rem; }
+
+.btn-primary {
+  --bs-btn-bg: var(--app-accent);
+  --bs-btn-border-color: var(--app-accent);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--app-accent) 85%, #000);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--app-accent) 85%, #000);
+}
+
+.btn-quiet {
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+.btn-quiet:hover { color: var(--app-text); border-color: color-mix(in srgb, var(--app-text) 20%, transparent); }
+
+.modal-content { background: var(--app-surface); border: 1px solid var(--app-border); }
+.offcanvas { background: var(--app-sidebar); }
+
+.empty-state { color: var(--app-muted); font-size: .875rem; padding: 2rem 0; text-align: center; }
