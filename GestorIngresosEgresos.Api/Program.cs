@@ -111,8 +111,6 @@ async Task IniciarSesion(HttpContext ctx, Usuario usuario, bool pendiente2fa)
     await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), props);
 }
 
-object DatosUsuario(Usuario u) => new { u.Id, u.Username, u.Email, u.Avatar, DobleFactor = u.TotpActivo };
-
 var api = app.MapGroup("/api");
 
 // ── Auth ────────────────────────────────────────────────────────────────
@@ -124,7 +122,7 @@ api.MapPost("/auth/login", async (LoginRequest req, HttpContext ctx, UsuarioServ
     await IniciarSesion(ctx, usuario, pendiente2fa: usuario.TotpActivo);
     return usuario.TotpActivo
         ? Results.Ok(new { requiere2fa = true })
-        : Results.Ok(DatosUsuario(usuario));
+        : Results.Ok(UsuarioDto.De(usuario));
 });
 
 // Paso 2 del login: la cookie a medias identifica al usuario, falta el codigo.
@@ -138,14 +136,14 @@ api.MapPost("/auth/login/2fa", async (CodigoRequest req, HttpContext ctx, Usuari
         return Results.Json(new { error = "Codigo incorrecto." }, statusCode: 401);
 
     await IniciarSesion(ctx, usuario, pendiente2fa: false);
-    return Results.Ok(DatosUsuario(usuario));
+    return Results.Ok(UsuarioDto.De(usuario));
 }).RequireAuthorization(p => p.RequireAuthenticatedUser());
 
 api.MapPost("/auth/registro", async (RegistroRequest req, HttpContext ctx, UsuarioService svc) =>
 {
     var usuario = svc.Registrar(req.Username, req.Password, req.Email);
     await IniciarSesion(ctx, usuario, pendiente2fa: false);
-    return Results.Ok(DatosUsuario(usuario));
+    return Results.Ok(UsuarioDto.De(usuario));
 });
 
 api.MapPost("/auth/logout", async (HttpContext ctx) =>
@@ -155,18 +153,18 @@ api.MapPost("/auth/logout", async (HttpContext ctx) =>
 }).RequireAuthorization(p => p.RequireAuthenticatedUser());
 
 api.MapGet("/auth/me", (HttpContext ctx, UsuarioService svc) =>
-    Results.Ok(DatosUsuario(svc.Obtener(UsuarioId(ctx))))
+    Results.Ok(UsuarioDto.De(svc.Obtener(UsuarioId(ctx))))
 ).RequireAuthorization();
 
 // ── Perfil ──────────────────────────────────────────────────────────────
 var perfil = api.MapGroup("/perfil").RequireAuthorization();
 
-perfil.MapGet("/", (HttpContext ctx, UsuarioService svc) => Results.Ok(DatosUsuario(svc.Obtener(UsuarioId(ctx)))));
+perfil.MapGet("/", (HttpContext ctx, UsuarioService svc) => Results.Ok(UsuarioDto.De(svc.Obtener(UsuarioId(ctx)))));
 
 perfil.MapPut("/", (PerfilRequest req, HttpContext ctx, UsuarioService svc) =>
 {
     svc.ActualizarPerfil(UsuarioId(ctx), req.Email);
-    return Results.Ok(DatosUsuario(svc.Obtener(UsuarioId(ctx))));
+    return Results.Ok(UsuarioDto.De(svc.Obtener(UsuarioId(ctx))));
 });
 
 perfil.MapPut("/password", (PasswordRequest req, HttpContext ctx, UsuarioService svc) =>
@@ -215,19 +213,20 @@ perfil.MapPost("/2fa/desactivar", (DesactivarTotpRequest req, HttpContext ctx, U
 // ── Periodos ────────────────────────────────────────────────────────────
 var periodos = api.MapGroup("/periodos").RequireAuthorization();
 
-periodos.MapGet("/", (HttpContext ctx, PeriodoService svc) => svc.ObtenerTodos(UsuarioId(ctx)));
+periodos.MapGet("/", (HttpContext ctx, PeriodoService svc) =>
+    svc.ObtenerTodos(UsuarioId(ctx)).Select(PeriodoDto.De));
 
 periodos.MapGet("/actual", (HttpContext ctx, PeriodoService svc, int? anio, int? mes) =>
 {
     var hoy = DateTime.Now;
     var p = svc.ObtenerOCrearPeriodo(UsuarioId(ctx), anio ?? hoy.Year, mes ?? hoy.Month);
-    return p is null ? Results.NotFound(new { error = "No hay periodo para ese mes." }) : Results.Ok(p);
+    return p is null ? Results.NotFound(new { error = "No hay periodo para ese mes." }) : Results.Ok(PeriodoDto.De(p));
 });
 
 periodos.MapGet("/{id:int}", (int id, HttpContext ctx, PeriodoService svc) =>
 {
     var p = svc.ObtenerPorId(UsuarioId(ctx), id);
-    return p is null ? Results.NotFound() : Results.Ok(p);
+    return p is null ? Results.NotFound() : Results.Ok(PeriodoDto.De(p));
 });
 
 periodos.MapPost("/{id:int}/cerrar", (int id, HttpContext ctx, PeriodoService svc) =>
@@ -236,20 +235,24 @@ periodos.MapPost("/{id:int}/cerrar", (int id, HttpContext ctx, PeriodoService sv
     return Results.NoContent();
 });
 
-periodos.MapGet("/{id:int}/ingresos", (int id, HttpContext ctx, IngresoService svc) => svc.ObtenerPorPeriodo(UsuarioId(ctx), id));
+periodos.MapGet("/{id:int}/ingresos", (int id, HttpContext ctx, IngresoService svc) =>
+    svc.ObtenerPorPeriodo(UsuarioId(ctx), id).Select(IngresoDto.De));
 
-periodos.MapPost("/{id:int}/ingresos", (int id, Ingreso ing, HttpContext ctx, IngresoService svc) =>
+periodos.MapPost("/{id:int}/ingresos", (int id, IngresoRequest req, HttpContext ctx, IngresoService svc) =>
 {
+    var ing = req.AEntidad();
     ing.PeriodoId = id;
-    return Results.Ok(svc.Guardar(UsuarioId(ctx), ing));
+    return Results.Ok(IngresoDto.De(svc.Guardar(UsuarioId(ctx), ing)));
 });
 
-periodos.MapGet("/{id:int}/gastos", (int id, HttpContext ctx, GastoService svc) => svc.ObtenerPorPeriodo(UsuarioId(ctx), id));
+periodos.MapGet("/{id:int}/gastos", (int id, HttpContext ctx, GastoService svc) =>
+    svc.ObtenerPorPeriodo(UsuarioId(ctx), id).Select(GastoDto.De));
 
-periodos.MapPost("/{id:int}/gastos", (int id, Gasto g, HttpContext ctx, GastoService svc) =>
+periodos.MapPost("/{id:int}/gastos", (int id, GastoRequest req, HttpContext ctx, GastoService svc) =>
 {
+    var g = req.AEntidad();
     g.PeriodoId = id;
-    return Results.Ok(svc.Guardar(UsuarioId(ctx), g));
+    return Results.Ok(GastoDto.De(svc.Guardar(UsuarioId(ctx), g)));
 });
 
 periodos.MapGet("/{id:int}/sobres", (int id, HttpContext ctx, PresupuestoService svc) => svc.ObtenerSobres(UsuarioId(ctx), id));
@@ -257,8 +260,9 @@ periodos.MapGet("/{id:int}/sobres", (int id, HttpContext ctx, PresupuestoService
 // ── Ingresos ────────────────────────────────────────────────────────────
 var ingresos = api.MapGroup("/ingresos").RequireAuthorization();
 
-ingresos.MapPut("/{id:int}", (int id, Ingreso ing, HttpContext ctx, IngresoService svc) =>
+ingresos.MapPut("/{id:int}", (int id, IngresoRequest req, HttpContext ctx, IngresoService svc) =>
 {
+    var ing = req.AEntidad();
     ing.Id = id;
     svc.Actualizar(UsuarioId(ctx), ing);
     return Results.NoContent();
@@ -273,8 +277,9 @@ ingresos.MapDelete("/{id:int}", (int id, HttpContext ctx, IngresoService svc) =>
 // ── Gastos ──────────────────────────────────────────────────────────────
 var gastos = api.MapGroup("/gastos").RequireAuthorization();
 
-gastos.MapPut("/{id:int}", (int id, Gasto g, HttpContext ctx, GastoService svc) =>
+gastos.MapPut("/{id:int}", (int id, GastoRequest req, HttpContext ctx, GastoService svc) =>
 {
+    var g = req.AEntidad();
     g.Id = id;
     svc.Actualizar(UsuarioId(ctx), g);
     return Results.NoContent();
@@ -292,10 +297,12 @@ gastos.MapGet("/{id:int}/resumen", (int id, HttpContext ctx, PresupuestoService 
     return r is null ? Results.NotFound() : Results.Ok(r);
 });
 
-gastos.MapGet("/{id:int}/consumos", (int id, HttpContext ctx, PresupuestoService svc) => svc.ObtenerConsumos(UsuarioId(ctx), id));
+gastos.MapGet("/{id:int}/consumos", (int id, HttpContext ctx, PresupuestoService svc) =>
+    svc.ObtenerConsumos(UsuarioId(ctx), id).Select(ConsumoDto.De));
 
-gastos.MapPost("/{id:int}/consumos", (int id, Consumo c, HttpContext ctx, PresupuestoService svc) =>
+gastos.MapPost("/{id:int}/consumos", (int id, ConsumoRequest req, HttpContext ctx, PresupuestoService svc) =>
 {
+    var c = req.AEntidad();
     c.GastoId = id;
     return Results.Ok(svc.Guardar(UsuarioId(ctx), c));
 });
@@ -303,8 +310,9 @@ gastos.MapPost("/{id:int}/consumos", (int id, Consumo c, HttpContext ctx, Presup
 // ── Consumos ────────────────────────────────────────────────────────────
 var consumos = api.MapGroup("/consumos").RequireAuthorization();
 
-consumos.MapPut("/{id:int}", (int id, Consumo c, HttpContext ctx, PresupuestoService svc) =>
+consumos.MapPut("/{id:int}", (int id, ConsumoRequest req, HttpContext ctx, PresupuestoService svc) =>
 {
+    var c = req.AEntidad();
     c.Id = id;
     return Results.Ok(svc.Actualizar(UsuarioId(ctx), c));
 });
@@ -321,11 +329,12 @@ api.MapGet("/categorias", (GastoService svc) => svc.ObtenerCategorias()).Require
 // ── Deudas ──────────────────────────────────────────────────────────────
 var deudas = api.MapGroup("/deudas").RequireAuthorization();
 
-deudas.MapGet("/", (HttpContext ctx, DeudaService svc) => svc.ObtenerTodas(UsuarioId(ctx)));
-deudas.MapGet("/activas", (HttpContext ctx, DeudaService svc) => svc.ObtenerActivas(UsuarioId(ctx)));
+deudas.MapGet("/", (HttpContext ctx, DeudaService svc) => svc.ObtenerTodas(UsuarioId(ctx)).Select(DeudaDto.De));
+deudas.MapGet("/activas", (HttpContext ctx, DeudaService svc) => svc.ObtenerActivas(UsuarioId(ctx)).Select(DeudaDto.De));
 deudas.MapGet("/resumen", (HttpContext ctx, DeudaService svc) => svc.Resumen(UsuarioId(ctx)));
 
-deudas.MapPost("/", (Deuda d, HttpContext ctx, DeudaService svc) => Results.Ok(svc.Guardar(UsuarioId(ctx), d)));
+deudas.MapPost("/", (DeudaRequest req, HttpContext ctx, DeudaService svc) =>
+    Results.Ok(DeudaDto.De(svc.Guardar(UsuarioId(ctx), req.AEntidad()))));
 
 deudas.MapDelete("/{id:int}", (int id, HttpContext ctx, DeudaService svc) =>
 {
@@ -340,11 +349,3 @@ deudas.MapPost("/{id:int}/pagos", (int id, AbonoRequest req, HttpContext ctx, De
 
 app.Run();
 return 0;
-
-record LoginRequest(string Username, string Password);
-record RegistroRequest(string Username, string Password, string? Email);
-record CodigoRequest(string Codigo);
-record DesactivarTotpRequest(string Password, string Codigo);
-record PerfilRequest(string? Email);
-record PasswordRequest(string Actual, string Nueva);
-record AbonoRequest(int PeriodoId, int? CategoriaId, decimal Monto, string? Descripcion);
