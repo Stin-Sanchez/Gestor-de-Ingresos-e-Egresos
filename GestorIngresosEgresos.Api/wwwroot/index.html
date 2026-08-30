@@ -121,18 +121,28 @@
     </nav>
 
     <main class="flex-grow-1 min-vw-0">
+      <!-- En movil el avatar es el acceso a la cuenta, a la derecha, donde el pulgar
+           lo alcanza; abre el mismo panel lateral que el menu. -->
       <nav class="d-md-none d-flex align-items-center justify-content-between p-3" style="border-bottom:1px solid var(--app-border);background:var(--app-sidebar)">
-        <button class="btn btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-nav"><i class="bi bi-list fs-5"></i></button>
+        <button class="btn btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-nav" aria-label="Menú"><i class="bi bi-list fs-5"></i></button>
         <span class="brand">Gestor</span>
-        <button class="btn btn-icon btn-tema" type="button"><i class="bi bi-moon-stars"></i></button>
+        <button class="btn btn-icon p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-nav" aria-label="Tu cuenta">
+          <span id="nav-avatar-movil" class="d-flex"></span>
+        </button>
       </nav>
 
-      <div class="offcanvas offcanvas-start" tabindex="-1" id="mobile-nav" style="max-width:260px">
-        <div class="offcanvas-header pb-2">
-          <span class="brand"><i class="bi bi-pie-chart-fill me-1" style="color:var(--app-accent)"></i> Gestor</span>
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="mobile-nav" style="max-width:280px">
+        <div class="offcanvas-header align-items-start">
+          <div class="d-flex align-items-center gap-2 min-w-0">
+            <span id="nav-avatar-panel" class="d-flex"></span>
+            <div class="min-w-0">
+              <div class="fw-medium text-truncate" id="nav-username-movil"></div>
+              <a href="#ajustes" class="text-decoration-none" data-view="ajustes" style="font-size:.75rem;color:var(--app-accent)">Ver perfil</a>
+            </div>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
-        <div class="offcanvas-body pt-0">
+        <div class="offcanvas-body pt-2">
           <ul class="nav flex-column gap-1">
             <li class="nav-item"><a href="#periodo" class="nav-link" data-view="periodo"><i class="bi bi-arrow-down-up"></i> Movimientos</a></li>
             <li class="nav-item"><a href="#presupuestos" class="nav-link" data-view="presupuestos"><i class="bi bi-wallet2"></i> Presupuestos</a></li>
@@ -140,7 +150,10 @@
             <li class="nav-item"><a href="#ajustes" class="nav-link" data-view="ajustes"><i class="bi bi-gear"></i> Ajustes</a></li>
           </ul>
           <hr style="border-color:var(--app-border)">
-          <button class="btn btn-quiet btn-sm w-100" id="btn-logout-mobile"><i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-quiet btn-sm flex-grow-1 btn-tema" type="button"><i class="bi bi-moon-stars me-1"></i> Tema</button>
+            <button class="btn btn-quiet btn-sm flex-grow-1" id="btn-logout-mobile"><i class="bi bi-box-arrow-right me-1"></i> Salir</button>
+          </div>
         </div>
       </div>
 

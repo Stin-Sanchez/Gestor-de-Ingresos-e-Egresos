@@ -51,7 +51,7 @@ Todos bajo `/api`, todos requieren sesión excepto `POST /auth/login`.
 | GET | `/periodos` | Lista periodos del usuario |
 | GET | `/periodos/actual?anio=&mes=` | Periodo del mes (lo crea si es el mes actual y no existe) |
 | GET | `/periodos/{id}` | Periodo por id |
-| PUT | `/periodos/{id}/sueldo` | Actualiza sueldo base |
+
 | POST | `/periodos/{id}/cerrar` | Cierra el periodo |
 | GET/POST | `/periodos/{id}/ingresos` | Ingresos del periodo |
 | PUT/DELETE | `/ingresos/{id}` | Editar/eliminar ingreso |

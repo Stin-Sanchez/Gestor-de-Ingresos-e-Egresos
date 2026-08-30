@@ -9,7 +9,6 @@ public class Periodo
     public string Nombre { get; set; } = "";
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
-    public decimal SueldoBase { get; set; }
     public decimal SaldoInicial { get; set; }
     public EstadoPeriodo Estado { get; set; }
 

@@ -91,6 +91,7 @@ Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `Ge
 4. `migration_v4.sql` — agrega `usuario_id` a `periodos` y `deudas` para aislar los datos entre usuarios (necesario solo para la versión web multiusuario).
 5. `migration_v5.sql` — agrega correo, avatar y segundo factor TOTP a `usuarios`.
 6. `migration_v6.sql` — deudas en dos direcciones (`tipo` en `deudas`, `deuda_id` en `ingresos`).
+7. `migration_v7.sql` — convierte `periodos.sueldo_base` en un ingreso de tipo `SUELDO` y elimina la columna.
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*

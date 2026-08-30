@@ -230,12 +230,6 @@ periodos.MapGet("/{id:int}", (int id, HttpContext ctx, PeriodoService svc) =>
     return p is null ? Results.NotFound() : Results.Ok(p);
 });
 
-periodos.MapPut("/{id:int}/sueldo", (int id, SueldoRequest req, HttpContext ctx, PeriodoService svc) =>
-{
-    svc.ActualizarSueldoBase(UsuarioId(ctx), id, req.SueldoBase);
-    return Results.NoContent();
-});
-
 periodos.MapPost("/{id:int}/cerrar", (int id, HttpContext ctx, PeriodoService svc) =>
 {
     svc.CerrarPeriodo(UsuarioId(ctx), id);
@@ -353,5 +347,4 @@ record CodigoRequest(string Codigo);
 record DesactivarTotpRequest(string Password, string Codigo);
 record PerfilRequest(string? Email);
 record PasswordRequest(string Actual, string Nueva);
-record SueldoRequest(decimal SueldoBase);
 record AbonoRequest(int PeriodoId, int? CategoriaId, decimal Monto, string? Descripcion);

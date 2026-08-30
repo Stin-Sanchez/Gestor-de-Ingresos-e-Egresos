@@ -315,7 +315,11 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-sm { width: 1.75rem; height: 1.75rem; font-size: .75rem; }
+.avatar-md { width: 2.5rem; height: 2.5rem; font-size: 1rem; }
 .avatar-lg { width: 5rem; height: 5rem; font-size: 1.75rem; }
+
+/* En la barra superior el avatar es un boton: necesita area tactil comoda. */
+.d-md-none .avatar-sm { width: 2rem; height: 2rem; font-size: .8125rem; }
 
 .qr-box {
   background: #fff; /* el QR necesita fondo claro para que las apps lo lean en modo oscuro */
