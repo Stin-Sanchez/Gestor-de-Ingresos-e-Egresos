@@ -13,6 +13,11 @@ services:
       - ./docs/sql/migration_v4.sql:/docker-entrypoint-initdb.d/03-migration_v4.sql:ro
       - ./docs/sql/migration_v5.sql:/docker-entrypoint-initdb.d/04-migration_v5.sql:ro
       - ./docs/sql/migration_v6.sql:/docker-entrypoint-initdb.d/05-migration_v6.sql:ro
+    # Sin techo, un pico de MySQL puede comerse la RAM del host y tumbar las demas
+    # apps del server. 1G deja holgura sobre los ~440M que usa en reposo; con 512M
+    # el kernel lo mataria por OOM en cuanto crezca la base.
+    mem_limit: 1g
+    cpus: 1.0
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
       interval: 5s
@@ -25,9 +30,15 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # La API ronda los 70M; 512M cubre picos de subida de avatares con margen.
+    mem_limit: 512m
+    cpus: 1.0
     environment:
       ConnectionStrings__Default: "Server=mysql;Port=3306;Database=GestorIngresosDB;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD:-root};"
       Avatares__Directorio: /app/data/avatares
+      # El GC de .NET mira el limite del contenedor, no la RAM del host: sin esto
+      # dimensiona sus heaps para 7.6G y tarda mucho mas en devolver memoria.
+      DOTNET_GCHeapHardLimitPercent: "75"
     volumes:
       # Los avatares son archivos: sin volumen se perderian en cada rebuild de la imagen.
       - avatares:/app/data/avatares
