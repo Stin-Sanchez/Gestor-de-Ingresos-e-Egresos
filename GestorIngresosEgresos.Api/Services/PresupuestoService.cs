@@ -3,7 +3,7 @@ using GestorIngresosEgresos.Api.Repository;
 
 namespace GestorIngresosEgresos.Api.Services;
 
-public record ConsumoGuardado(Consumo Consumo, string? Aviso);
+public record ConsumoGuardado(ConsumoDto Consumo, string? Aviso);
 
 // Coordina los sobres y sus consumos. Un consumo no puede pasarse del sobre: se bloquea,
 // igual que se decidio para los gastos contra su presupuesto.
@@ -17,14 +17,16 @@ public class PresupuestoService(PresupuestoRepository repo)
     {
         Validar(usuarioId, c, excludeConsumoId: null);
         repo.Guardar(c);
-        return new ConsumoGuardado(c, CalcularAviso(usuarioId, c.GastoId));
+        return new ConsumoGuardado(ConsumoDto.De(c), CalcularAviso(usuarioId, c.GastoId));
     }
 
     public ConsumoGuardado Actualizar(int usuarioId, Consumo c)
     {
+        c.GastoId = repo.ObtenerGastoIdDeConsumo(usuarioId, c.Id)
+            ?? throw new KeyNotFoundException("Consumo no encontrado.");
         Validar(usuarioId, c, excludeConsumoId: c.Id);
         repo.Actualizar(usuarioId, c);
-        return new ConsumoGuardado(c, CalcularAviso(usuarioId, c.GastoId));
+        return new ConsumoGuardado(ConsumoDto.De(c), CalcularAviso(usuarioId, c.GastoId));
     }
 
     public void Eliminar(int usuarioId, int consumoId) => repo.Eliminar(usuarioId, consumoId);

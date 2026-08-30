@@ -67,6 +67,20 @@ public class PresupuestoRepository(Db db)
         return lista;
     }
 
+    // A que sobre pertenece un consumo. La edicion no puede fiarse del gasto_id del body:
+    // validaria el limite contra un sobre distinto al que realmente se descuenta.
+    public int? ObtenerGastoIdDeConsumo(int usuarioId, int consumoId)
+    {
+        const string sql = @"SELECT co.gasto_id FROM consumos co
+                              JOIN gastos g ON g.id = co.gasto_id JOIN periodos p ON p.id = g.periodo_id
+                              WHERE co.id = @id AND p.usuario_id = @uid";
+        using var conn = db.Open();
+        using var cmd = new MySqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@id", consumoId);
+        cmd.Parameters.AddWithValue("@uid", usuarioId);
+        return cmd.ExecuteScalar() is object o and not DBNull ? Convert.ToInt32(o) : null;
+    }
+
     // excludeConsumoId permite validar una edicion sin que el consumo se cuente contra si mismo.
     public decimal ObtenerConsumido(int gastoId, int? excludeConsumoId)
     {
