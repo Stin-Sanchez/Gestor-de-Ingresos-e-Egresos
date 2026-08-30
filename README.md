@@ -30,11 +30,43 @@ Ambas comparten la misma base de datos MySQL.
 
 ## 🐳 Correr la versión web (Docker)
 
+Crea un `.env` junto al `docker-compose.yml`:
+
+```env
+MYSQL_ROOT_PASSWORD=cambia-esto
+```
+
 ```bash
 docker compose up -d --build
 ```
 
-Levanta MySQL + la API en `http://localhost:8080` (sirve también el frontend). Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`).
+Queda en `http://<ip-del-server>:8081`. Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`), o crea el tuyo desde la pantalla de acceso.
+
+### HTTPS con Tailscale
+
+Usando el Tailscale que ya corre en el host (no hace falta ningún contenedor extra):
+
+```bash
+sudo tailscale serve --bg --https=8443 http://127.0.0.1:8081
+tailscale serve status
+```
+
+Queda en `https://<hostname>.<tu-tailnet>.ts.net:8443`, con certificado automático.
+
+Se usa un puerto distinto de 443 porque un nodo de Tailscale tiene un solo hostname
+MagicDNS, y el 443 de este server puede estar ya ocupado por otra app. Si prefieres una
+URL sin puerto, `--https=443` sirve siempre que nada más lo esté usando.
+
+> Requiere MagicDNS y certificados HTTPS habilitados en la consola de Tailscale.
+
+### Si pierdes el segundo factor
+
+El 2FA no tiene códigos de respaldo. Si pierdes el teléfono, desactívalo desde la base:
+
+```bash
+docker compose exec mysql mysql -uroot -p GestorIngresosDB \
+  -e "UPDATE usuarios SET totp_activo = 0, totp_secret = NULL WHERE username = 'TU_USUARIO';"
+```
 
 ## 🗃️ Migraciones
 
@@ -44,6 +76,7 @@ Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `Ge
 2. `migration_v2.sql`
 3. `migration_v3.sql` — agrega la tabla `presupuestos`; requerida para la funcion de presupuestos y tambien para registrar gastos, ya que el guardado de gastos consulta esa tabla.
 4. `migration_v4.sql` — agrega `usuario_id` a `periodos` y `deudas` para aislar los datos entre usuarios (necesario solo para la versión web multiusuario).
+5. `migration_v5.sql` — agrega correo, avatar y segundo factor TOTP a `usuarios`.
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*
