@@ -4,6 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gestor Financiero</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="iconos/icon-192.png" type="image/png">
+  <!-- iOS ignora los iconos del manifest y usa este. -->
+  <link rel="apple-touch-icon" href="iconos/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Gestor">
+  <!-- El valor real lo fija tema.js segun el tema activo, no segun el del sistema:
+       la app tiene su propio interruptor y debe mandar el sobre el del SO. -->
+  <meta name="theme-color" content="#fbfbfc">
+
   <!-- Aplica el tema antes de pintar para no mostrar un flash del tema contrario. -->
   <script>
     (() => {
