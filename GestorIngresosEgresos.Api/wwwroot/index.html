@@ -18,31 +18,83 @@
 </head>
 <body>
 
-<!-- ── Login ─────────────────────────────────────────────────────────── -->
-<div id="login-view" class="d-flex align-items-center justify-content-center">
-  <div class="card">
-    <div class="card-body p-4">
-      <div class="text-center mb-4">
-        <div class="brand mb-1">Gestor Financiero</div>
-        <div class="text-muted-app" style="font-size:.8125rem">Ingresa para continuar</div>
-      </div>
-      <form id="login-form">
-        <div class="mb-3">
-          <label class="form-label" for="login-username">Usuario</label>
-          <input type="text" class="form-control" id="login-username" required autofocus autocomplete="username">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="login-password">Contraseña</label>
-          <div class="input-group">
-            <input type="password" class="form-control" id="login-password" required autocomplete="current-password">
-            <button class="btn btn-quiet" type="button" id="toggle-password" aria-label="Mostrar contraseña">
-              <i class="bi bi-eye"></i>
-            </button>
+<!-- ── Acceso ────────────────────────────────────────────────────────── -->
+<div id="login-view" class="d-flex align-items-center justify-content-center p-3">
+  <div style="width:22rem">
+    <div class="text-center mb-4">
+      <div class="auth-logo mb-3"><i class="bi bi-pie-chart-fill"></i></div>
+      <div class="h5 fw-semibold mb-1">Gestor Financiero</div>
+      <div class="text-muted-app" style="font-size:.8125rem">Tus finanzas, solo tuyas</div>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+
+        <!-- Paso 1: entrar o crear cuenta -->
+        <div id="auth-credenciales">
+          <div class="seg mb-4">
+            <button type="button" class="seg-btn active" data-modo="entrar">Entrar</button>
+            <button type="button" class="seg-btn" data-modo="registro">Crear cuenta</button>
           </div>
+
+          <form id="form-entrar">
+            <div class="mb-3">
+              <label class="form-label" for="in-usuario">Usuario</label>
+              <input type="text" class="form-control" id="in-usuario" required autocomplete="username">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="in-password">Contraseña</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="in-password" required autocomplete="current-password">
+                <button class="btn btn-quiet" type="button" data-toggle-pass="in-password" aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+          </form>
+
+          <form id="form-registro" class="d-none">
+            <div class="mb-3">
+              <label class="form-label" for="re-usuario">Usuario</label>
+              <input type="text" class="form-control" id="re-usuario" required autocomplete="username">
+              <div class="form-text">3 a 50 caracteres: letras, números, punto, guion o guion bajo.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="re-email">Correo <span class="text-muted-app fw-normal">(opcional)</span></label>
+              <input type="email" class="form-control" id="re-email" autocomplete="email">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="re-password">Contraseña</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="re-password" required autocomplete="new-password">
+                <button class="btn btn-quiet" type="button" data-toggle-pass="re-password" aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
+              </div>
+              <div class="form-text">Mínimo 8 caracteres.</div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Crear cuenta</button>
+          </form>
         </div>
-        <div id="login-error" class="alert alert-danger py-2 px-3 d-none" style="font-size:.8125rem"></div>
-        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
-      </form>
+
+        <!-- Paso 2: segundo factor -->
+        <div id="auth-2fa" class="d-none">
+          <div class="text-center mb-3">
+            <i class="bi bi-shield-lock fs-3" style="color:var(--app-accent)"></i>
+            <div class="fw-medium mt-2">Verificación en dos pasos</div>
+            <div class="text-muted-app" style="font-size:.8125rem">Escribe el código de tu app de autenticación.</div>
+          </div>
+          <form id="form-2fa">
+            <input type="text" class="form-control codigo-input mb-3" id="in-codigo"
+                   inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required>
+            <button type="submit" class="btn btn-primary w-100">Verificar</button>
+            <button type="button" class="btn btn-quiet w-100 mt-2" id="btn-cancelar-2fa">Cancelar</button>
+          </form>
+        </div>
+
+        <div id="auth-error" class="alert alert-danger py-2 px-3 mt-3 mb-0 d-none" style="font-size:.8125rem"></div>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <button class="btn btn-icon btn-tema" type="button" title="Cambiar tema"><i class="bi bi-moon-stars"></i></button>
     </div>
   </div>
 </div>
@@ -58,13 +110,13 @@
         <li class="nav-item"><a href="#periodo" class="nav-link" data-view="periodo"><i class="bi bi-arrow-down-up"></i> Movimientos</a></li>
         <li class="nav-item"><a href="#presupuestos" class="nav-link" data-view="presupuestos"><i class="bi bi-wallet2"></i> Presupuestos</a></li>
         <li class="nav-item"><a href="#deudas" class="nav-link" data-view="deudas"><i class="bi bi-credit-card"></i> Deudas</a></li>
+        <li class="nav-item"><a href="#ajustes" class="nav-link" data-view="ajustes"><i class="bi bi-gear"></i> Ajustes</a></li>
       </ul>
-      <div class="d-flex align-items-center justify-content-between px-2 pt-3" style="border-top:1px solid var(--app-border)">
-        <span class="text-muted-app text-truncate" style="font-size:.8125rem" id="nav-username"></span>
-        <div class="d-flex gap-1">
-          <button class="btn btn-icon btn-tema" type="button" title="Cambiar tema"><i class="bi bi-moon-stars"></i></button>
-          <button class="btn btn-icon danger" type="button" id="btn-logout" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
-        </div>
+      <div class="d-flex align-items-center gap-2 px-2 pt-3" style="border-top:1px solid var(--app-border)">
+        <span id="nav-avatar" class="d-flex"></span>
+        <span class="text-truncate flex-grow-1" style="font-size:.8125rem" id="nav-username"></span>
+        <button class="btn btn-icon btn-tema" type="button" title="Cambiar tema"><i class="bi bi-moon-stars"></i></button>
+        <button class="btn btn-icon danger" type="button" id="btn-logout" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </nav>
 
@@ -85,6 +137,7 @@
             <li class="nav-item"><a href="#periodo" class="nav-link" data-view="periodo"><i class="bi bi-arrow-down-up"></i> Movimientos</a></li>
             <li class="nav-item"><a href="#presupuestos" class="nav-link" data-view="presupuestos"><i class="bi bi-wallet2"></i> Presupuestos</a></li>
             <li class="nav-item"><a href="#deudas" class="nav-link" data-view="deudas"><i class="bi bi-credit-card"></i> Deudas</a></li>
+            <li class="nav-item"><a href="#ajustes" class="nav-link" data-view="ajustes"><i class="bi bi-gear"></i> Ajustes</a></li>
           </ul>
           <hr style="border-color:var(--app-border)">
           <button class="btn btn-quiet btn-sm w-100" id="btn-logout-mobile"><i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión</button>
@@ -96,6 +149,7 @@
         <section id="view-periodo" class="view d-none"></section>
         <section id="view-presupuestos" class="view d-none"></section>
         <section id="view-deudas" class="view d-none"></section>
+        <section id="view-ajustes" class="view d-none"></section>
       </div>
     </main>
   </div>

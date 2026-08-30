@@ -224,3 +224,82 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
 .offcanvas { background: var(--app-sidebar); }
 
 .empty-state { color: var(--app-muted); font-size: .875rem; padding: 2rem 0; text-align: center; }
+
+/* ── Acceso ───────────────────────────────────────────────────────────── */
+.auth-logo {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: .875rem;
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+  color: var(--app-accent);
+  font-size: 1.375rem;
+}
+
+/* Control segmentado para alternar entrar / crear cuenta. */
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  gap: .25rem;
+  padding: .25rem;
+  border-radius: .5rem;
+  background: color-mix(in srgb, var(--app-text) 6%, transparent);
+}
+.seg-btn {
+  border: 0;
+  background: transparent;
+  border-radius: .375rem;
+  padding: .375rem .5rem;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--app-muted);
+}
+.seg-btn.active {
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .06);
+}
+
+.codigo-input {
+  text-align: center;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .4em;
+  text-indent: .4em; /* compensa el espaciado del ultimo caracter para que quede centrado */
+  padding: .625rem;
+}
+
+/* ── Avatar ───────────────────────────────────────────────────────────── */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-sm { width: 1.75rem; height: 1.75rem; font-size: .75rem; }
+.avatar-lg { width: 5rem; height: 5rem; font-size: 1.75rem; }
+
+.qr-box {
+  background: #fff; /* el QR necesita fondo claro para que las apps lo lean en modo oscuro */
+  padding: .75rem;
+  border-radius: .5rem;
+  display: inline-block;
+  line-height: 0;
+}
+.qr-box img { width: 180px; height: 180px; }
+
+.secret-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .8125rem;
+  word-break: break-all;
+  background: color-mix(in srgb, var(--app-text) 6%, transparent);
+  padding: .5rem .625rem;
+  border-radius: .375rem;
+}

@@ -11,6 +11,7 @@ services:
       - ./docs/sql/migration_v2.sql:/docker-entrypoint-initdb.d/01-migration_v2.sql:ro
       - ./docs/sql/migration_v3.sql:/docker-entrypoint-initdb.d/02-migration_v3.sql:ro
       - ./docs/sql/migration_v4.sql:/docker-entrypoint-initdb.d/03-migration_v4.sql:ro
+      - ./docs/sql/migration_v5.sql:/docker-entrypoint-initdb.d/04-migration_v5.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
       interval: 5s
@@ -25,8 +26,13 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__Default: "Server=mysql;Port=3306;Database=GestorIngresosDB;Uid=root;Pwd=${MYSQL_ROOT_PASSWORD:-root};"
+      Avatares__Directorio: /app/data/avatares
+    volumes:
+      # Los avatares son archivos: sin volumen se perderian en cada rebuild de la imagen.
+      - avatares:/app/data/avatares
     ports:
       - "8081:8080"
 
 volumes:
   mysql-data:
+  avatares:

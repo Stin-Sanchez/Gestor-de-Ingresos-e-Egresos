@@ -23,9 +23,21 @@ async function request(method, path, body) {
   return data;
 }
 
+// Los archivos van como multipart, asi que no pasan por request(), que serializa JSON.
+async function upload(path, campo, file) {
+  const form = new FormData();
+  form.append(campo, file);
+
+  const res = await fetch(`/api${path}`, { method: "POST", body: form, credentials: "same-origin" });
+  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json() : null;
+  if (!res.ok) throw new ApiError(res.status, data?.error ?? `Error ${res.status}`);
+  return data;
+}
+
 export const api = {
   get: (path) => request("GET", path),
   post: (path, body) => request("POST", path, body ?? {}),
   put: (path, body) => request("PUT", path, body ?? {}),
   del: (path) => request("DELETE", path),
+  upload,
 };
