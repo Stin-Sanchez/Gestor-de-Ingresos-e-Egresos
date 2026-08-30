@@ -206,6 +206,12 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
 }
 .form-label { font-size: .8125rem; font-weight: 500; margin-bottom: .3125rem; }
 
+.input-group-text {
+  background: color-mix(in srgb, var(--app-text) 4%, transparent);
+  border-color: var(--app-border);
+  color: var(--app-muted);
+}
+
 .btn-primary {
   --bs-btn-bg: var(--app-accent);
   --bs-btn-border-color: var(--app-accent);
