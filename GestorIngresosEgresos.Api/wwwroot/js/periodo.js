@@ -29,7 +29,7 @@ async function cargarPeriodo(container) {
   }
 
   if (!periodo) {
-    container.innerHTML = `${cabecera(nombreMes(), false)}
+    container.innerHTML = `${cabecera(nombreMes())}
       <div class="surface empty-state mt-3">
         <i class="bi bi-calendar-x d-block fs-4 mb-2"></i>
         Este mes no tiene movimientos registrados.
@@ -62,7 +62,7 @@ function nombreMes() {
 function totales() {
   const totalIngresos = ingresos.reduce((s, i) => s + i.monto, 0);
   const totalGastos = gastos.reduce((s, g) => s + g.monto, 0);
-  const saldo = (periodo.saldoInicial ?? 0) + (periodo.sueldoBase ?? 0) + totalIngresos - totalGastos;
+  const saldo = (periodo.saldoInicial ?? 0) + totalIngresos - totalGastos;
   return { totalIngresos, totalGastos, saldo };
 }
 
@@ -80,15 +80,12 @@ function movimientos() {
     (m.categoriaNombre || "").toLowerCase().includes(q));
 }
 
-function cabecera(titulo, conSueldo) {
+function cabecera(titulo) {
   return `
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <button class="btn btn-icon" id="btn-prev-mes" title="Mes anterior"><i class="bi bi-chevron-left"></i></button>
       <h1 class="h5 mb-0 fw-semibold">${esc(titulo)}</h1>
       <button class="btn btn-icon" id="btn-next-mes" title="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
-      ${conSueldo ? `<button class="btn btn-quiet btn-sm ms-auto" id="btn-editar-sueldo">
-          <i class="bi bi-pencil me-1"></i><span class="d-none d-sm-inline">Sueldo base: </span>${money(periodo.sueldoBase)}
-        </button>` : ""}
     </div>`;
 }
 
@@ -96,7 +93,7 @@ function vista() {
   const { totalIngresos, totalGastos, saldo } = totales();
 
   return `
-    ${cabecera(periodo.nombre, true)}
+    ${cabecera(periodo.nombre)}
 
     <div class="row g-3 mt-1 mb-3">
       ${tile("Saldo", saldo, saldo < 0 ? "text-neg" : "")}
@@ -267,7 +264,6 @@ function bindTabla(container) {
 
 function bind(container) {
   bindNav(container);
-  document.getElementById("btn-editar-sueldo").onclick = () => editarSueldo(container);
   document.getElementById("btn-nuevo-ingreso").onclick = () => formIngreso(container);
   document.getElementById("btn-nuevo-gasto").onclick = () => formGasto(container);
 
@@ -281,24 +277,6 @@ function bind(container) {
   dibujarChart();
 }
 
-function editarSueldo(container) {
-  const body = openModal("Sueldo base del mes", `
-    <div class="mb-3">
-      <label class="form-label" for="f-sueldo">Monto</label>
-      <input type="number" step="0.01" min="0" class="form-control" id="f-sueldo" value="${periodo.sueldoBase}">
-    </div>
-    <button class="btn btn-primary w-100" id="f-guardar">Guardar</button>`);
-
-  body.querySelector("#f-guardar").onclick = async () => {
-    try {
-      await api.put(`/periodos/${periodo.id}/sueldo`, { sueldoBase: Number(body.querySelector("#f-sueldo").value) });
-      closeModal();
-      await cargarPeriodo(container);
-      toast("Sueldo base actualizado.");
-    } catch (e) { toast(e.message, "danger"); }
-  };
-}
-
 function formIngreso(container, ing) {
   const body = openModal(ing ? "Editar ingreso" : "Nuevo ingreso", `
     <div class="row g-3">
@@ -309,7 +287,8 @@ function formIngreso(container, ing) {
       <div class="col-12"><label class="form-label" for="f-tipo">Tipo</label>
         <select class="form-select" id="f-tipo">
           ${["SUELDO", "EXTRA", "OTRO"].map(t => `<option value="${t}" ${ing?.tipo === t ? "selected" : ""}>${t}</option>`).join("")}
-        </select></div>
+        </select>
+        <div class="form-text">Si cobras varias veces al mes, registra cada pago por separado (quincena, fin de mes…).</div></div>
       <div class="col-12"><label class="form-label" for="f-desc">Descripción</label>
         <input type="text" class="form-control" id="f-desc" value="${esc(ing?.descripcion ?? "")}"></div>
       <div class="col-12"><button class="btn btn-primary w-100" id="f-guardar">Guardar</button></div>

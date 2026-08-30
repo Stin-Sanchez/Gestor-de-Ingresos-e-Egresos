@@ -28,19 +28,12 @@ public class PeriodoService(PeriodoRepository repo)
             Nombre = nombre,
             FechaInicio = fechaInicio,
             FechaFin = fechaFin,
-            SueldoBase = 0,
             SaldoInicial = 0,
             Estado = EstadoPeriodo.ABIERTO
         });
     }
 
     public Periodo? ObtenerPorId(int usuarioId, int id) => repo.ObtenerPorId(usuarioId, id);
-
-    public void ActualizarSueldoBase(int usuarioId, int periodoId, decimal sueldoBase)
-    {
-        if (sueldoBase < 0) throw new ArgumentException("El sueldo base no puede ser negativo.");
-        repo.ActualizarSueldoBase(usuarioId, periodoId, sueldoBase);
-    }
 
     public void CerrarPeriodo(int usuarioId, int periodoId) => repo.Cerrar(usuarioId, periodoId);
 }

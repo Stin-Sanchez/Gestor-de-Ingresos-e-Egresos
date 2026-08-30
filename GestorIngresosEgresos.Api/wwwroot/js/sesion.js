@@ -27,6 +27,11 @@ export function avatarHtml(u, clase = "avatar-sm") {
 
 function pintarBarraLateral() {
   if (!usuario) return;
-  document.getElementById("nav-username").textContent = usuario.username;
+
+  for (const id of ["nav-username", "nav-username-movil"])
+    document.getElementById(id).textContent = usuario.username;
+
   document.getElementById("nav-avatar").innerHTML = avatarHtml(usuario);
+  document.getElementById("nav-avatar-movil").innerHTML = avatarHtml(usuario);
+  document.getElementById("nav-avatar-panel").innerHTML = avatarHtml(usuario, "avatar-md");
 }
