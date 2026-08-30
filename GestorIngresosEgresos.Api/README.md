@@ -91,7 +91,7 @@ sesión se emite con la marca `2fa_pendiente` y 5 minutos de vida. La política 
 autorización por defecto rechaza esa marca en todos los endpoints salvo
 `/auth/login/2fa` y `/auth/logout`, así que una sesión a medias no alcanza ningún dato.
 
-**Detrás de un proxy TLS** (`tailscale serve`), `UseForwardedHeaders` traduce
+**Detrás de un proxy TLS** (`tailscale serve` desde el host), `UseForwardedHeaders` traduce
 `X-Forwarded-Proto` para que la cookie de sesión salga marcada como `Secure`.
 
 **Sin códigos de respaldo.** Perder el dispositivo TOTP se resuelve desde la base

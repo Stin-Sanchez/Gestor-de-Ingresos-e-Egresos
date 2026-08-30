@@ -63,10 +63,14 @@ var app = builder.Build();
 
 // Detras de "tailscale serve" la app recibe HTTP plano; sin esto no se entera de que
 // el usuario entro por HTTPS y la cookie de sesion sale sin el flag Secure.
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-});
+var forwarded = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedProto };
+// El proxy corre en el host y entra por el puerto publicado, asi que la peticion llega
+// desde el gateway del bridge de Docker, no desde loopback: con la lista por defecto
+// (solo loopback) la cabecera se descartaria. Falsificarla solo consigue que el propio
+// cliente reciba su cookie marcada como Secure, no afecta a nadie mas.
+forwarded.KnownNetworks.Clear();
+forwarded.KnownProxies.Clear();
+app.UseForwardedHeaders(forwarded);
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

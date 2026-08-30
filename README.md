@@ -34,22 +34,30 @@ Crea un `.env` junto al `docker-compose.yml`:
 
 ```env
 MYSQL_ROOT_PASSWORD=cambia-esto
-TS_HOSTNAME=gestor
-TS_AUTHKEY=tskey-auth-...   # https://login.tailscale.com/admin/settings/keys
 ```
 
 ```bash
 docker compose up -d --build
 ```
 
-Queda disponible en:
+Queda en `http://<ip-del-server>:8081`. Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`), o crea el tuyo desde la pantalla de acceso.
 
-* `https://gestor.<tu-tailnet>.ts.net` — a través de Tailscale, con HTTPS automático. La app entra a la tailnet como **nodo propio** (contenedor sidecar `tailscale`), para no chocar con el puerto 443 que pueda estar usando otra app del mismo server.
-* `http://<ip-del-server>:8081` — acceso directo dentro de la LAN.
+### HTTPS con Tailscale
 
-Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`), o crea el tuyo desde la pantalla de acceso.
+Usando el Tailscale que ya corre en el host (no hace falta ningún contenedor extra):
 
-> Para que el HTTPS funcione, la tailnet necesita MagicDNS y certificados HTTPS habilitados en la consola de Tailscale.
+```bash
+sudo tailscale serve --bg --https=8443 http://127.0.0.1:8081
+tailscale serve status
+```
+
+Queda en `https://<hostname>.<tu-tailnet>.ts.net:8443`, con certificado automático.
+
+Se usa un puerto distinto de 443 porque un nodo de Tailscale tiene un solo hostname
+MagicDNS, y el 443 de este server puede estar ya ocupado por otra app. Si prefieres una
+URL sin puerto, `--https=443` sirve siempre que nada más lo esté usando.
+
+> Requiere MagicDNS y certificados HTTPS habilitados en la consola de Tailscale.
 
 ### Si pierdes el segundo factor
 
