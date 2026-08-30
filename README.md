@@ -19,12 +19,31 @@ Una herramienta sencilla y funcional para la gestión de finanzas personales. Di
 
 ## 🛠️ Tecnologías
 
-*  C#
-*  WinForms
-*  Mysql Database
+Este repo tiene dos versiones de la misma app:
+
+* **`GestorIngresosEgresos/`** — la app de escritorio original (C# / WinForms).
+* **`GestorIngresosEgresos.Api/`** — la migración a web (ASP.NET Core 9 minimal API + frontend vanilla JS/Bootstrap 5/Chart.js), pensada para correr en un homelab vía Docker. Ver `GestorIngresosEgresos.Api/README.md` para arquitectura y endpoints.
+
+Ambas comparten la misma base de datos MySQL.
 
     <img width="1920" height="1040" alt="image" src="https://github.com/user-attachments/assets/ff88b00c-64dd-4ddc-b365-5cadb530304a" />
 
+## 🐳 Correr la versión web (Docker)
+
+```bash
+docker compose up -d --build
+```
+
+Levanta MySQL + la API en `http://localhost:8080` (sirve también el frontend). Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`).
+
+## 🗃️ Migraciones
+
+Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `GestorIngresosDB` (para la versión web, `docker-compose.yml` ya las aplica automáticamente al crear el contenedor de MySQL):
+
+1. `migration.sql`
+2. `migration_v2.sql`
+3. `migration_v3.sql` — agrega la tabla `presupuestos`; requerida para la funcion de presupuestos y tambien para registrar gastos, ya que el guardado de gastos consulta esa tabla.
+4. `migration_v4.sql` — agrega `usuario_id` a `periodos` y `deudas` para aislar los datos entre usuarios (necesario solo para la versión web multiusuario).
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*

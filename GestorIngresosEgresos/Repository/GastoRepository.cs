@@ -51,8 +51,8 @@ namespace GestorIngresosEgresos.Repository
 
         public Gasto Guardar(Gasto g)
         {
-            string sql = @"INSERT INTO gastos (periodo_id, categoria_id, deuda_id, monto, fecha, descripcion)
-                           VALUES (@pid, @cat, @did, @monto, @fecha, @desc);
+            string sql = @"INSERT INTO gastos (periodo_id, categoria_id, deuda_id, monto, fecha, descripcion, es_sobre)
+                           VALUES (@pid, @cat, @did, @monto, @fecha, @desc, @sobre);
                            SELECT LAST_INSERT_ID();";
             using (var cmd = new MySqlCommand(sql, _conn))
             {
@@ -62,6 +62,7 @@ namespace GestorIngresosEgresos.Repository
                 cmd.Parameters.AddWithValue("@monto", g.Monto);
                 cmd.Parameters.AddWithValue("@fecha", g.Fecha.Date);
                 cmd.Parameters.AddWithValue("@desc",  g.Descripcion ?? "");
+                cmd.Parameters.AddWithValue("@sobre", g.EsSobre);
                 g.Id = Convert.ToInt32(cmd.ExecuteScalar());
             }
             return g;
@@ -69,13 +70,14 @@ namespace GestorIngresosEgresos.Repository
 
         public void Actualizar(Gasto g)
         {
-            string sql = "UPDATE gastos SET categoria_id=@cat, monto=@monto, fecha=@fecha, descripcion=@desc WHERE id=@id";
+            string sql = "UPDATE gastos SET categoria_id=@cat, monto=@monto, fecha=@fecha, descripcion=@desc, es_sobre=@sobre WHERE id=@id";
             using (var cmd = new MySqlCommand(sql, _conn))
             {
                 cmd.Parameters.AddWithValue("@cat",   (object)g.CategoriaId ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@monto", g.Monto);
                 cmd.Parameters.AddWithValue("@fecha", g.Fecha.Date);
                 cmd.Parameters.AddWithValue("@desc",  g.Descripcion ?? "");
+                cmd.Parameters.AddWithValue("@sobre", g.EsSobre);
                 cmd.Parameters.AddWithValue("@id",    g.Id);
                 cmd.ExecuteNonQuery();
             }
@@ -105,6 +107,7 @@ namespace GestorIngresosEgresos.Repository
                 Monto           = r.GetDecimal("monto"),
                 Fecha           = r.GetDateTime("fecha"),
                 Descripcion     = r.GetString("descripcion"),
+                EsSobre         = r.GetBoolean("es_sobre"),
                 CategoriaNombre = r.IsDBNull(catNomOrd) ? "" : r.GetString(catNomOrd)
             };
         }

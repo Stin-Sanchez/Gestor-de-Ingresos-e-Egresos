@@ -39,6 +39,7 @@ namespace GestorIngresosEgresos.Vista
         {
             public bool     EsIngreso   { get; set; }
             public bool     EsAbono     { get; set; }
+            public bool     EsSobre     { get; set; }
             public int      Id          { get; set; }
             public int?     CategoriaId { get; set; }
             public DateTime Fecha       { get; set; }
@@ -263,8 +264,10 @@ namespace GestorIngresosEgresos.Vista
                 Tipo = Capitalizar(i.Tipo.ToString().ToLower()), Descripcion = i.Descripcion, Monto = i.Monto
             }).Concat(gastos.Select(g => new FilaMovimiento
             {
-                EsIngreso = false, EsAbono = g.EsAbono, Id = g.Id, CategoriaId = g.CategoriaId, Fecha = g.Fecha,
-                Tipo = g.EsAbono ? "Abono" : (string.IsNullOrEmpty(g.CategoriaNombre) ? "Gasto" : g.CategoriaNombre),
+                EsIngreso = false, EsAbono = g.EsAbono, EsSobre = g.EsSobre, Id = g.Id, CategoriaId = g.CategoriaId, Fecha = g.Fecha,
+                // El sobre se marca en Tipo, no en Descripcion: Descripcion se reusa tal cual al editar.
+                Tipo = g.EsAbono ? "Abono"
+                     : (g.EsSobre ? "Sobre" : (string.IsNullOrEmpty(g.CategoriaNombre) ? "Gasto" : g.CategoriaNombre)),
                 Descripcion = g.EsAbono ? $"Abono: {g.Descripcion}" : g.Descripcion, Monto = g.Monto
             })).OrderByDescending(f => f.Fecha).ToList();
 
@@ -356,7 +359,7 @@ namespace GestorIngresosEgresos.Vista
                     var existing = new Gasto
                     {
                         Id = f.Id, PeriodoId = _periodo.Id, CategoriaId = f.CategoriaId,
-                        Fecha = f.Fecha, Descripcion = f.Descripcion, Monto = f.Monto
+                        Fecha = f.Fecha, Descripcion = f.Descripcion, Monto = f.Monto, EsSobre = f.EsSobre
                     };
                     using (var form = new FormGasto(_periodo.Id, _gastoCtrl.ObtenerCategorias(), existing))
                         if (form.ShowDialog() == DialogResult.OK)

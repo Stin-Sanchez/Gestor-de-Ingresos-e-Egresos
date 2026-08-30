@@ -1,0 +1,34 @@
+:root {
+  --sidebar-bg: #1e2432;
+  --sidebar-fg: #cbd3e1;
+  --accent: #4f7cff;
+}
+
+body { background: #f4f6f9; }
+
+#login-view { min-height: 100vh; }
+
+.sidebar {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  min-height: 100vh;
+}
+.sidebar .nav-link { color: var(--sidebar-fg); border-radius: .5rem; }
+.sidebar .nav-link.active, .sidebar .nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+.tile { border-radius: .75rem; }
+
+.sobre-card { cursor: pointer; border-radius: .75rem; }
+.sobre-card.selected { outline: 2px solid var(--accent); }
+
+.progress { height: .6rem; border-radius: .5rem; }
+
+.estado-OK { background-color: #198754 !important; }
+.estado-ALERTA { background-color: #ffc107 !important; }
+.estado-CRITICO { background-color: #fd7e14 !important; }
+.estado-EXCEDIDO { background-color: #dc3545 !important; }
+
+.badge-estado-OK { background-color: #198754; }
+.badge-estado-ALERTA { background-color: #ffc107; color: #222; }
+.badge-estado-CRITICO { background-color: #fd7e14; }
+.badge-estado-EXCEDIDO { background-color: #dc3545; }
