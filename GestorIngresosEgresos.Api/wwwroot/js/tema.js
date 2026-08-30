@@ -10,6 +10,11 @@ export function esOscuro() {
 function pintarIconos() {
   const clase = esOscuro() ? "bi bi-sun" : "bi bi-moon-stars";
   for (const btn of document.querySelectorAll(".btn-tema i")) btn.className = clase;
+
+  // Instalada en el movil, la barra de estado toma este color: si no se actualiza,
+  // el tema oscuro queda con una franja clara encima.
+  document.querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", getComputedStyle(document.body).getPropertyValue("--app-sidebar").trim());
 }
 
 export function initTema(onChange) {
