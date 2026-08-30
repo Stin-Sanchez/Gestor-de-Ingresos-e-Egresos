@@ -6,6 +6,7 @@ using GestorIngresosEgresos.Api.Repository;
 using GestorIngresosEgresos.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 
 if (args.Contains("--selftest"))
 {
@@ -59,6 +60,13 @@ builder.Services.AddScoped<PresupuestoService>();
 builder.Services.AddScoped<DeudaService>();
 
 var app = builder.Build();
+
+// Detras de "tailscale serve" la app recibe HTTP plano; sin esto no se entera de que
+// el usuario entro por HTTPS y la cookie de sesion sale sin el flag Secure.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+});
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

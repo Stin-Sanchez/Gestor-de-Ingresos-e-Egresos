@@ -72,3 +72,28 @@ Todos bajo `/api`, todos requieren sesión excepto `POST /auth/login`.
 ## Despliegue (homelab)
 
 Ver `docker-compose.yml` en la raíz del repo — levanta la API + MySQL en contenedores.
+
+## Cuentas, perfil y segundo factor
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/auth/registro` | Crea cuenta y deja la sesión iniciada |
+| POST | `/auth/login/2fa` | Paso 2 del login cuando el usuario tiene TOTP activo |
+| GET/PUT | `/perfil` | Leer / actualizar correo |
+| PUT | `/perfil/password` | Cambiar contraseña (pide la actual) |
+| GET/POST/DELETE | `/perfil/avatar` | Servir / subir / quitar avatar |
+| POST | `/perfil/2fa/iniciar` | Genera secreto + QR (aún no activa) |
+| POST | `/perfil/2fa/confirmar` | Activa el TOTP tras validar un código |
+| POST | `/perfil/2fa/desactivar` | Desactiva (pide contraseña + código) |
+
+**Login en dos pasos.** Al validar la contraseña de un usuario con TOTP activo, la
+sesión se emite con la marca `2fa_pendiente` y 5 minutos de vida. La política de
+autorización por defecto rechaza esa marca en todos los endpoints salvo
+`/auth/login/2fa` y `/auth/logout`, así que una sesión a medias no alcanza ningún dato.
+
+**Detrás de un proxy TLS** (`tailscale serve`), `UseForwardedHeaders` traduce
+`X-Forwarded-Proto` para que la cookie de sesión salga marcada como `Secure`.
+
+**Sin códigos de respaldo.** Perder el dispositivo TOTP se resuelve desde la base
+(ver el README raíz), que es razonable para una app de homelab donde el dueño
+tiene acceso a MySQL. Si alguna vez se abre a gente sin ese acceso, hay que añadirlos.

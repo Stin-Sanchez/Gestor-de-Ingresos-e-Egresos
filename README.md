@@ -30,11 +30,35 @@ Ambas comparten la misma base de datos MySQL.
 
 ## 🐳 Correr la versión web (Docker)
 
+Crea un `.env` junto al `docker-compose.yml`:
+
+```env
+MYSQL_ROOT_PASSWORD=cambia-esto
+TS_HOSTNAME=gestor
+TS_AUTHKEY=tskey-auth-...   # https://login.tailscale.com/admin/settings/keys
+```
+
 ```bash
 docker compose up -d --build
 ```
 
-Levanta MySQL + la API en `http://localhost:8080` (sirve también el frontend). Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`).
+Queda disponible en:
+
+* `https://gestor.<tu-tailnet>.ts.net` — a través de Tailscale, con HTTPS automático. La app entra a la tailnet como **nodo propio** (contenedor sidecar `tailscale`), para no chocar con el puerto 443 que pueda estar usando otra app del mismo server.
+* `http://<ip-del-server>:8081` — acceso directo dentro de la LAN.
+
+Usuario inicial: `admin` / `admin123` (creado por `migration_v2.sql`), o crea el tuyo desde la pantalla de acceso.
+
+> Para que el HTTPS funcione, la tailnet necesita MagicDNS y certificados HTTPS habilitados en la consola de Tailscale.
+
+### Si pierdes el segundo factor
+
+El 2FA no tiene códigos de respaldo. Si pierdes el teléfono, desactívalo desde la base:
+
+```bash
+docker compose exec mysql mysql -uroot -p GestorIngresosDB \
+  -e "UPDATE usuarios SET totp_activo = 0, totp_secret = NULL WHERE username = 'TU_USUARIO';"
+```
 
 ## 🗃️ Migraciones
 
@@ -44,6 +68,7 @@ Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `Ge
 2. `migration_v2.sql`
 3. `migration_v3.sql` — agrega la tabla `presupuestos`; requerida para la funcion de presupuestos y tambien para registrar gastos, ya que el guardado de gastos consulta esa tabla.
 4. `migration_v4.sql` — agrega `usuario_id` a `periodos` y `deudas` para aislar los datos entre usuarios (necesario solo para la versión web multiusuario).
+5. `migration_v5.sql` — agrega correo, avatar y segundo factor TOTP a `usuarios`.
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*

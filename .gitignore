@@ -373,3 +373,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Secretos de despliegue (TS_AUTHKEY, password de MySQL)
+.env
