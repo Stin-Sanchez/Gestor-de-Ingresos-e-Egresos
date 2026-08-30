@@ -12,7 +12,9 @@ USE GestorIngresosDB;
 -- ON DELETE CASCADE, asi que basta con usuario_id aqui para aislarlos.
 ALTER TABLE periodos ADD COLUMN usuario_id INT NOT NULL DEFAULT 1;
 ALTER TABLE periodos ADD CONSTRAINT fk_per_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
-ALTER TABLE periodos DROP INDEX IF EXISTS uq_periodo_mes;
+-- Un usuario no puede tener dos periodos para el mismo mes (ObtenerOCrearPeriodo
+-- consulta y luego inserta, asi que sin esta restriccion dos requests simultaneas
+-- podrian crear el periodo dos veces).
 CREATE UNIQUE INDEX uq_periodo_usuario_mes ON periodos (usuario_id, fecha_inicio);
 
 -- deudas no cuelga de periodos, necesita su propio usuario_id.
