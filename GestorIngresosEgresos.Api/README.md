@@ -64,10 +64,10 @@ Todos bajo `/api`, todos requieren sesión excepto `POST /auth/login`.
 | PUT/DELETE | `/consumos/{id}` | Editar/eliminar consumo |
 | GET/POST | `/deudas` | Listar/crear deudas |
 | GET | `/deudas/activas` | Solo deudas activas |
-| GET | `/deudas/total-pendiente` | Suma de saldo pendiente |
+| GET | `/deudas/resumen` | Totales separados: debo, me deben y neto |
 | DELETE | `/deudas/{id}` | Eliminar deuda |
-| GET | `/deudas/{id}/abonos` | Historial de abonos |
-| POST | `/deudas/{id}/abonos` | Registrar abono (transaccional) |
+| GET | `/deudas/{id}/pagos` | Historial de abonos o cobros |
+| POST | `/deudas/{id}/pagos` | Registrar abono o cobro (transaccional) |
 
 ## Despliegue (homelab)
 

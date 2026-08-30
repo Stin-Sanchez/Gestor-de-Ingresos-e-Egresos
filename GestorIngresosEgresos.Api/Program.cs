@@ -329,7 +329,7 @@ var deudas = api.MapGroup("/deudas").RequireAuthorization();
 
 deudas.MapGet("/", (HttpContext ctx, DeudaService svc) => svc.ObtenerTodas(UsuarioId(ctx)));
 deudas.MapGet("/activas", (HttpContext ctx, DeudaService svc) => svc.ObtenerActivas(UsuarioId(ctx)));
-deudas.MapGet("/total-pendiente", (HttpContext ctx, DeudaService svc) => new { total = svc.TotalPendiente(UsuarioId(ctx)) });
+deudas.MapGet("/resumen", (HttpContext ctx, DeudaService svc) => svc.Resumen(UsuarioId(ctx)));
 
 deudas.MapPost("/", (Deuda d, HttpContext ctx, DeudaService svc) => Results.Ok(svc.Guardar(UsuarioId(ctx), d)));
 
@@ -339,10 +339,10 @@ deudas.MapDelete("/{id:int}", (int id, HttpContext ctx, DeudaService svc) =>
     return Results.NoContent();
 });
 
-deudas.MapGet("/{id:int}/abonos", (int id, HttpContext ctx, GastoService svc) => svc.ObtenerAbonosPorDeuda(UsuarioId(ctx), id));
+deudas.MapGet("/{id:int}/pagos", (int id, HttpContext ctx, DeudaService svc) => svc.ObtenerPagos(UsuarioId(ctx), id));
 
-deudas.MapPost("/{id:int}/abonos", (int id, AbonoRequest req, HttpContext ctx, DeudaService svc) =>
-    Results.Ok(svc.RegistrarAbono(UsuarioId(ctx), id, req.PeriodoId, req.CategoriaId, req.Monto, req.Descripcion)));
+deudas.MapPost("/{id:int}/pagos", (int id, AbonoRequest req, HttpContext ctx, DeudaService svc) =>
+    Results.Ok(svc.RegistrarPago(UsuarioId(ctx), id, req.PeriodoId, req.CategoriaId, req.Monto, req.Descripcion)));
 
 app.Run();
 return 0;

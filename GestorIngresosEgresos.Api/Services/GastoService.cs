@@ -3,10 +3,9 @@ using GestorIngresosEgresos.Api.Repository;
 
 namespace GestorIngresosEgresos.Api.Services;
 
-public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, PresupuestoRepository presRepo, CategoriaRepository catRepo)
+public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, PresupuestoRepository presRepo, CategoriaRepository catRepo, DeudaRepository deudaRepo)
 {
     public List<Gasto> ObtenerPorPeriodo(int usuarioId, int periodoId) => repo.ObtenerPorPeriodo(usuarioId, periodoId);
-    public List<Gasto> ObtenerAbonosPorDeuda(int usuarioId, int deudaId) => repo.ObtenerAbonosPorDeuda(usuarioId, deudaId);
     public List<CategoriaGasto> ObtenerCategorias() => catRepo.ObtenerTodas();
 
     public Gasto Guardar(int usuarioId, Gasto g)
@@ -23,8 +22,12 @@ public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, P
 
     public void Actualizar(int usuarioId, Gasto g)
     {
-        if (repo.ObtenerPorId(usuarioId, g.Id) is null)
-            throw new KeyNotFoundException("Gasto no encontrado.");
+        var actual = repo.ObtenerPorId(usuarioId, g.Id)
+            ?? throw new KeyNotFoundException("Gasto no encontrado.");
+        // Editar el monto aqui dejaria la deuda descuadrada: el saldo pagado se lleva
+        // en la deuda, no en el gasto. Para corregir hay que borrarlo y volver a abonar.
+        if (actual.DeudaId.HasValue)
+            throw new InvalidOperationException("Este egreso es el abono de una deuda. Edítalo desde la sección de Deudas.");
         if (g.Monto <= 0) throw new ArgumentException("El monto debe ser mayor a cero.");
         if (string.IsNullOrWhiteSpace(g.Descripcion))
             throw new ArgumentException("La descripcion es obligatoria.");
@@ -35,9 +38,15 @@ public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, P
 
     public void Eliminar(int usuarioId, int id)
     {
-        if (repo.ObtenerPorId(usuarioId, id) is null)
-            throw new KeyNotFoundException("Gasto no encontrado.");
-        repo.Eliminar(usuarioId, id);
+        var g = repo.ObtenerPorId(usuarioId, id)
+            ?? throw new KeyNotFoundException("Gasto no encontrado.");
+
+        // Borrar un abono tiene que devolverle el monto a la deuda, o quedaria
+        // reportando mas pagado de lo que realmente se pago.
+        if (g.DeudaId is int deudaId)
+            deudaRepo.EliminarPago(TipoDeuda.DEBO, deudaId, g.Id, g.Monto);
+        else
+            repo.Eliminar(usuarioId, id);
     }
 
     // Un sobre no puede quedar por debajo de lo que ya se consumio de el, ni dejar de

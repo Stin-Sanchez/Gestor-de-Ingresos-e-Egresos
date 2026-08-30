@@ -6,8 +6,11 @@ public class Ingreso
 {
     public int Id { get; set; }
     public int PeriodoId { get; set; }
+    public int? DeudaId { get; set; }
     public decimal Monto { get; set; }
     public DateTime Fecha { get; set; }
     public string Descripcion { get; set; } = "";
     public TipoIngreso Tipo { get; set; }
+
+    public bool EsCobro => DeudaId.HasValue;
 }

@@ -59,6 +59,19 @@ URL sin puerto, `--https=443` sirve siempre que nada más lo esté usando.
 
 > Requiere MagicDNS y certificados HTTPS habilitados en la consola de Tailscale.
 
+### Aplicar una migración sobre una base que ya existe
+
+`docker-compose.yml` solo corre las migraciones cuando crea la base por primera vez.
+Si ya tenías datos, aplícala a mano:
+
+```bash
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" GestorIngresosDB' < docs/sql/migration_v5.sql
+```
+
+La contraseña se toma de la variable que ya vive dentro del contenedor. No uses
+`-p` a secas con un archivo redirigido: sin TTY, `mysql` lee la contraseña de stdin
+y se come la primera línea del script, con lo que falla con *access denied*.
+
 ### Si pierdes el segundo factor
 
 El 2FA no tiene códigos de respaldo. Si pierdes el teléfono, desactívalo desde la base:
@@ -77,6 +90,7 @@ Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `Ge
 3. `migration_v3.sql` — agrega la tabla `presupuestos`; requerida para la funcion de presupuestos y tambien para registrar gastos, ya que el guardado de gastos consulta esa tabla.
 4. `migration_v4.sql` — agrega `usuario_id` a `periodos` y `deudas` para aislar los datos entre usuarios (necesario solo para la versión web multiusuario).
 5. `migration_v5.sql` — agrega correo, avatar y segundo factor TOTP a `usuarios`.
+6. `migration_v6.sql` — deudas en dos direcciones (`tipo` en `deudas`, `deuda_id` en `ingresos`).
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*

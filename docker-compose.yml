@@ -12,6 +12,7 @@ services:
       - ./docs/sql/migration_v3.sql:/docker-entrypoint-initdb.d/02-migration_v3.sql:ro
       - ./docs/sql/migration_v4.sql:/docker-entrypoint-initdb.d/03-migration_v4.sql:ro
       - ./docs/sql/migration_v5.sql:/docker-entrypoint-initdb.d/04-migration_v5.sql:ro
+      - ./docs/sql/migration_v6.sql:/docker-entrypoint-initdb.d/05-migration_v6.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
       interval: 5s
