@@ -45,7 +45,7 @@ services:
       - avatares:/app/data/avatares
     ports:
       # El HTTPS publico lo pone "tailscale serve" desde el host, apuntando aqui.
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
 
 volumes:
   mysql-data:
