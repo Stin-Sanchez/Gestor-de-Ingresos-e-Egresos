@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 
 if (args.Contains("--selftest"))
 {
-    return PresupuestoResumen.SelfCheck() & TotpService.SelfCheck() ? 0 : 1;
+    return PresupuestoResumen.SelfCheck() & Periodo.SelfCheck() & Deuda.SelfCheck() & TotpService.SelfCheck() ? 0 : 1;
 }
 
 var builder = WebApplication.CreateBuilder(args);
@@ -235,6 +235,20 @@ periodos.MapPost("/{id:int}/cerrar", (int id, HttpContext ctx, PeriodoService sv
     return Results.NoContent();
 });
 
+periodos.MapPost("/{id:int}/reabrir", (int id, HttpContext ctx, PeriodoService svc) =>
+{
+    svc.ReabrirPeriodo(UsuarioId(ctx), id);
+    return Results.NoContent();
+});
+
+periodos.MapGet("/config", (HttpContext ctx, PeriodoService svc) => svc.ObtenerConfig(UsuarioId(ctx)));
+
+periodos.MapPut("/config", (ConfigPeriodosRequest req, HttpContext ctx, PeriodoService svc) =>
+{
+    svc.GuardarConfig(UsuarioId(ctx), req.DiaCorte, req.DiasGracia);
+    return Results.NoContent();
+});
+
 periodos.MapGet("/{id:int}/ingresos", (int id, HttpContext ctx, IngresoService svc) =>
     svc.ObtenerPorPeriodo(UsuarioId(ctx), id).Select(IngresoDto.De));
 
@@ -336,16 +350,43 @@ deudas.MapGet("/resumen", (HttpContext ctx, DeudaService svc) => svc.Resumen(Usu
 deudas.MapPost("/", (DeudaRequest req, HttpContext ctx, DeudaService svc) =>
     Results.Ok(DeudaDto.De(svc.Guardar(UsuarioId(ctx), req.AEntidad()))));
 
+// El Tipo del body se ignora: lo fija la creacion y cambiarlo dejaria los pagos, que viven
+// en gastos o en ingresos segun la direccion, colgados de la tabla equivocada.
+deudas.MapPut("/{id:int}", (int id, DeudaRequest req, HttpContext ctx, DeudaService svc) =>
+{
+    var d = req.AEntidad();
+    d.Id = id;
+    svc.Actualizar(UsuarioId(ctx), d);
+    return Results.NoContent();
+});
+
 deudas.MapDelete("/{id:int}", (int id, HttpContext ctx, DeudaService svc) =>
 {
     svc.Eliminar(UsuarioId(ctx), id);
     return Results.NoContent();
 });
 
-deudas.MapGet("/{id:int}/pagos", (int id, HttpContext ctx, DeudaService svc) => svc.ObtenerPagos(UsuarioId(ctx), id));
+// Historial completo: pagos y ampliaciones mezclados.
+deudas.MapGet("/{id:int}/movimientos", (int id, HttpContext ctx, DeudaService svc) => svc.ObtenerMovimientos(UsuarioId(ctx), id));
 
 deudas.MapPost("/{id:int}/pagos", (int id, AbonoRequest req, HttpContext ctx, DeudaService svc) =>
     Results.Ok(svc.RegistrarPago(UsuarioId(ctx), id, req.PeriodoId, req.CategoriaId, req.Monto, req.Descripcion)));
+
+// Prestar mas sobre una deuda que ya existe, en vez de crear otra a la misma persona.
+deudas.MapPost("/{id:int}/ampliaciones", (int id, AmpliacionRequest req, HttpContext ctx, DeudaService svc) =>
+    Results.Ok(svc.Ampliar(UsuarioId(ctx), id, req.Monto, req.Fecha, req.Descripcion)));
+
+deudas.MapPut("/ampliaciones/{ampliacionId:int}", (int ampliacionId, AmpliacionRequest req, HttpContext ctx, DeudaService svc) =>
+{
+    svc.ActualizarAmpliacion(UsuarioId(ctx), ampliacionId, req.Monto, req.Fecha, req.Descripcion);
+    return Results.NoContent();
+});
+
+deudas.MapDelete("/ampliaciones/{ampliacionId:int}", (int ampliacionId, HttpContext ctx, DeudaService svc) =>
+{
+    svc.EliminarAmpliacion(UsuarioId(ctx), ampliacionId);
+    return Results.NoContent();
+});
 
 app.Run();
 return 0;

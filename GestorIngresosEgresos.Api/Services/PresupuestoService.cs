@@ -7,7 +7,7 @@ public record ConsumoGuardado(ConsumoDto Consumo, string? Aviso);
 
 // Coordina los sobres y sus consumos. Un consumo no puede pasarse del sobre: se bloquea,
 // igual que se decidio para los gastos contra su presupuesto.
-public class PresupuestoService(PresupuestoRepository repo)
+public class PresupuestoService(PresupuestoRepository repo, GastoRepository gastoRepo, PeriodoService periodos)
 {
     public List<PresupuestoResumen> ObtenerSobres(int usuarioId, int periodoId) => repo.ObtenerSobresPorPeriodo(usuarioId, periodoId);
     public PresupuestoResumen? ObtenerResumen(int usuarioId, int gastoId) => repo.ObtenerResumenPorGasto(usuarioId, gastoId);
@@ -29,7 +29,21 @@ public class PresupuestoService(PresupuestoRepository repo)
         return new ConsumoGuardado(ConsumoDto.De(c), CalcularAviso(usuarioId, c.GastoId));
     }
 
-    public void Eliminar(int usuarioId, int consumoId) => repo.Eliminar(usuarioId, consumoId);
+    public void Eliminar(int usuarioId, int consumoId)
+    {
+        int gastoId = repo.ObtenerGastoIdDeConsumo(usuarioId, consumoId)
+            ?? throw new KeyNotFoundException("Consumo no encontrado.");
+        ExigirPeriodoAbierto(usuarioId, gastoId);
+        repo.Eliminar(usuarioId, consumoId);
+    }
+
+    // El consumo no lleva periodo propio: lo hereda del sobre, que es un gasto de un periodo.
+    private void ExigirPeriodoAbierto(int usuarioId, int gastoId)
+    {
+        var sobre = gastoRepo.ObtenerPorId(usuarioId, gastoId)
+            ?? throw new KeyNotFoundException("El sobre ya no existe.");
+        periodos.ExigirAbierto(usuarioId, sobre.PeriodoId);
+    }
 
     private void Validar(int usuarioId, Consumo c, int? excludeConsumoId)
     {
@@ -38,6 +52,8 @@ public class PresupuestoService(PresupuestoRepository repo)
         if (string.IsNullOrWhiteSpace(c.Descripcion))
             throw new ArgumentException("La descripcion es obligatoria.");
         if (c.Fecha == default) c.Fecha = DateTime.Today;
+
+        ExigirPeriodoAbierto(usuarioId, c.GastoId);
 
         var sobre = repo.ObtenerResumenPorGasto(usuarioId, c.GastoId)
             ?? throw new ArgumentException("El sobre ya no existe.");

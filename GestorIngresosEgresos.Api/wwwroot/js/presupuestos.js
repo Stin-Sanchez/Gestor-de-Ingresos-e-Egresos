@@ -2,22 +2,27 @@ import { api } from "./api.js";
 import { money, dateInputValue, fechaCorta, esc, toast, confirmar, ESTADO_LABEL } from "./ui.js";
 import { openModal, closeModal } from "./modal.js";
 
+let cursor = new Date(); // mes que se esta mostrando
+let periodo = null;
 let sobres = [];
 let seleccionadoId = null;
 let consumos = [];
 
+const cerrado = () => periodo?.estado === "CERRADO";
+
 export async function render(container) {
-  const hoy = new Date();
-  let periodo;
   try {
-    periodo = await api.get(`/periodos/actual?anio=${hoy.getFullYear()}&mes=${hoy.getMonth() + 1}`);
+    periodo = await api.get(`/periodos/actual?anio=${cursor.getFullYear()}&mes=${cursor.getMonth() + 1}`);
   } catch {
     periodo = null;
   }
 
   if (!periodo) {
-    container.innerHTML = `<h1 class="h5 fw-semibold mb-3">Presupuestos</h1>
-      <div class="surface empty-state"><i class="bi bi-calendar-x d-block fs-4 mb-2"></i>No hay periodo activo este mes.</div>`;
+    sobres = [];
+    consumos = [];
+    container.innerHTML = `${cabecera(nombreMes())}
+      <div class="surface empty-state mt-3"><i class="bi bi-calendar-x d-block fs-4 mb-2"></i>Este mes no tiene periodo.</div>`;
+    bindNav(container);
     return;
   }
 
@@ -30,26 +35,59 @@ export async function render(container) {
   bind(container);
 }
 
+function cambiarMes(container, delta) {
+  cursor = new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1);
+  seleccionadoId = null; // los sobres son de otro periodo: la seleccion anterior ya no existe
+  render(container);
+}
+
+function nombreMes() {
+  const s = cursor.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Mismo navegador de meses que Movimientos: los sobres de un periodo cerrado se
+// consultan igual que los del actual, solo que sin poder tocarlos.
+function cabecera(titulo, extra = "") {
+  return `
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button class="btn btn-icon" id="btn-prev-mes" title="Mes anterior"><i class="bi bi-chevron-left"></i></button>
+        <h1 class="h5 mb-0 fw-semibold">${esc(titulo)}</h1>
+        <button class="btn btn-icon" id="btn-next-mes" title="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
+        ${cerrado() ? `<span class="chip chip-neutral"><i class="bi bi-lock me-1"></i>Cerrado</span>` : ""}
+      </div>
+      ${extra}
+    </div>`;
+}
+
 function vista(sel) {
+  const conteo = `<span class="text-muted-app" style="font-size:.8125rem">${sobres.length} sobre${sobres.length === 1 ? "" : "s"}</span>`;
+
   if (!sobres.length) {
-    return `<h1 class="h5 fw-semibold mb-3">Presupuestos</h1>
-      <div class="surface empty-state">
+    return `${cabecera(periodo.nombre, conteo)}
+      <div class="surface empty-state mt-3">
         <i class="bi bi-wallet2 d-block fs-4 mb-2"></i>
-        Todavía no tienes sobres.<br>
-        <span style="font-size:.8125rem">Marca un egreso como “sobre” en Movimientos para verlo aquí.</span>
+        Este periodo no tiene sobres.<br>
+        <span style="font-size:.8125rem">Marca un egreso como &ldquo;sobre&rdquo; en Movimientos para verlo aquí.</span>
       </div>`;
   }
 
   return `
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h1 class="h5 fw-semibold mb-0">Presupuestos</h1>
-      <span class="text-muted-app" style="font-size:.8125rem">${sobres.length} sobre${sobres.length === 1 ? "" : "s"}</span>
-    </div>
-    <div class="row g-3">
+    ${cabecera(periodo.nombre, conteo)}
+    ${cerrado() ? avisoCerrado() : ""}
+    <div class="row g-3 mt-1">
       <div class="col-12 col-lg-5 col-xxl-4">
         <div class="d-flex flex-column gap-2">${sobres.map(sobreCard).join("")}</div>
       </div>
       <div class="col-12 col-lg-7 col-xxl-8">${sel ? detalle(sel) : ""}</div>
+    </div>`;
+}
+
+function avisoCerrado() {
+  return `<div class="surface p-3 mt-3 d-flex align-items-center gap-2" style="font-size:.8125rem">
+      <i class="bi bi-lock text-muted-app"></i>
+      <span class="text-muted-app">Periodo cerrado: puedes consultarlo, pero no registrar consumos. Reábrelo desde Ajustes para editarlo.</span>
     </div>`;
 }
 
@@ -78,13 +116,13 @@ function detalle(s) {
       <div class="p-3" style="border-bottom:1px solid var(--app-border)">
         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
           <div>
-            <div class="label">Disponible en “${esc(s.titulo)}”</div>
+            <div class="label">Disponible en &ldquo;${esc(s.titulo)}&rdquo;</div>
             <div class="tile-value numeric ${s.disponible <= 0 ? "text-neg" : "text-pos"}">${money(s.disponible)}</div>
             <div class="text-muted-app numeric mt-1" style="font-size:.8125rem">
               Consumido ${money(s.gastado)} · Límite ${money(s.limite)}
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" id="btn-nuevo-consumo" ${s.disponible <= 0 ? "disabled" : ""}>
+          <button class="btn btn-primary btn-sm" id="btn-nuevo-consumo" ${s.disponible <= 0 || cerrado() ? "disabled" : ""}>
             <i class="bi bi-plus-lg me-1"></i>Consumo
           </button>
         </div>
@@ -99,10 +137,10 @@ function detalle(s) {
                 <td class="text-muted-app numeric" style="font-size:.8125rem">${fechaCorta(c.fecha)}</td>
                 <td>${esc(c.descripcion)}</td>
                 <td class="text-end numeric fw-medium">${money(c.monto)}</td>
-                <td class="text-end"><span class="row-actions">
+                <td class="text-end">${cerrado() ? "" : `<span class="row-actions">
                   <button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>
                   <button class="btn btn-icon danger btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
-                </span></td>
+                </span>`}</td>
               </tr>`).join("") || `<tr><td colspan="4" class="empty-state">Sin consumos registrados</td></tr>`}
           </tbody>
         </table>
@@ -110,7 +148,14 @@ function detalle(s) {
     </div>`;
 }
 
+function bindNav(container) {
+  container.querySelector("#btn-prev-mes").onclick = () => cambiarMes(container, -1);
+  container.querySelector("#btn-next-mes").onclick = () => cambiarMes(container, 1);
+}
+
 function bind(container) {
+  bindNav(container);
+
   for (const card of container.querySelectorAll(".sobre-card")) {
     card.onclick = async () => {
       seleccionadoId = Number(card.dataset.id);
@@ -122,8 +167,8 @@ function bind(container) {
 
   for (const tr of container.querySelectorAll("tr[data-cid]")) {
     const id = Number(tr.dataset.cid);
-    tr.querySelector(".btn-editar").onclick = () => formConsumo(container, consumos.find(c => c.id === id));
-    tr.querySelector(".btn-eliminar").onclick = () => eliminar(container, id);
+    tr.querySelector(".btn-editar")?.addEventListener("click", () => formConsumo(container, consumos.find(c => c.id === id)));
+    tr.querySelector(".btn-eliminar")?.addEventListener("click", () => eliminar(container, id));
   }
 }
 

@@ -6,7 +6,7 @@ namespace GestorIngresosEgresos.Api.Repository;
 
 public class UsuarioRepository(Db db)
 {
-    private const string Campos = "id, username, password_hash, email, avatar, totp_secret, totp_activo";
+    private const string Campos = "id, username, password_hash, email, avatar, totp_secret, totp_activo, dia_corte, dias_gracia";
 
     public Usuario? ObtenerPorUsername(string username)
     {
@@ -97,6 +97,16 @@ public class UsuarioRepository(Db db)
         cmd.ExecuteNonQuery();
     }
 
+    public void ActualizarConfigPeriodos(int usuarioId, int diaCorte, int diasGracia)
+    {
+        using var conn = db.Open();
+        using var cmd = new MySqlCommand("UPDATE usuarios SET dia_corte = @c, dias_gracia = @g WHERE id = @id", conn);
+        cmd.Parameters.AddWithValue("@c", diaCorte);
+        cmd.Parameters.AddWithValue("@g", diasGracia);
+        cmd.Parameters.AddWithValue("@id", usuarioId);
+        cmd.ExecuteNonQuery();
+    }
+
     private static Usuario Mapear(MySqlDataReader r)
     {
         int emailOrd = r.GetOrdinal("email");
@@ -110,7 +120,9 @@ public class UsuarioRepository(Db db)
             Email = r.IsDBNull(emailOrd) ? null : r.GetString(emailOrd),
             Avatar = r.IsDBNull(avatarOrd) ? null : r.GetString(avatarOrd),
             TotpSecret = r.IsDBNull(secretOrd) ? null : r.GetString(secretOrd),
-            TotpActivo = r.GetBoolean("totp_activo")
+            TotpActivo = r.GetBoolean("totp_activo"),
+            DiaCorte = r.GetInt32("dia_corte"),
+            DiasGracia = r.GetInt32("dias_gracia")
         };
     }
 }
