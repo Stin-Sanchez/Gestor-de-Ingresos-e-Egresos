@@ -4,9 +4,15 @@ import { openModal, closeModal } from "./modal.js";
 import { avatarHtml, refrescarUsuario } from "./sesion.js";
 
 let perfil = null;
+let config = null;
+let periodos = [];
 
 export async function render(container) {
-  perfil = await api.get("/perfil");
+  [perfil, config, periodos] = await Promise.all([
+    api.get("/perfil"),
+    api.get("/periodos/config"),
+    api.get("/periodos"),
+  ]);
   container.innerHTML = vista();
   bind(container);
 }
@@ -58,6 +64,37 @@ function vista() {
       </form>
     </div>
 
+    <div class="surface p-3 p-md-4 mb-3">
+      <div class="label mb-3">Periodos</div>
+
+      <form id="form-periodos" class="row g-3 mb-4" style="max-width:34rem">
+        <div class="col-12 col-sm-6">
+          <label class="form-label" for="in-corte">Día de corte</label>
+          <input type="number" min="1" max="31" class="form-control" id="in-corte" value="${config.diaCorte}">
+          <div class="form-text">El periodo arranca ese día del mes. 1 = mes calendario.</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <label class="form-label" for="in-gracia">Días de gracia</label>
+          <input type="number" min="0" max="28" class="form-control" id="in-gracia" value="${config.diasGracia}">
+          <div class="form-text">Margen tras el fin antes de cerrarse solo.</div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary btn-sm" type="submit">Guardar configuración</button>
+          <div class="form-text">Solo afecta a los periodos que se creen después; los existentes conservan sus fechas.</div>
+        </div>
+      </form>
+
+      <div class="label mb-2">Historial</div>
+      <div class="table-responsive">
+        <table class="table table-hover tabla-compacta">
+          <thead><tr><th>Periodo</th><th>Rango</th><th>Estado</th><th style="width:6rem"></th></tr></thead>
+          <tbody>
+            ${periodos.map(filaPeriodo).join("") || `<tr><td colspan="4" class="empty-state">Sin periodos todavía</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="surface p-3 p-md-4">
       <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
         <div>
@@ -79,7 +116,59 @@ function vista() {
     </div>`;
 }
 
+function rango(p) {
+  const f = (iso) => new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+  return `${f(p.fechaInicio)} – ${f(p.fechaFin)}`;
+}
+
+function filaPeriodo(p) {
+  return `
+    <tr data-pid="${p.id}">
+      <td>${esc(p.nombre)}${p.esActual ? ` <span class="chip chip-neutral">Actual</span>` : ""}</td>
+      <td class="text-muted-app numeric" style="font-size:.8125rem">${rango(p)}</td>
+      <td>${p.estado === "CERRADO"
+        ? `<span class="chip chip-neutral"><i class="bi bi-lock me-1"></i>Cerrado</span>`
+        : `<span class="chip chip-OK">Abierto</span>`}</td>
+      <td class="text-end">
+        <button class="btn btn-quiet btn-sm ${p.estado === "CERRADO" ? "btn-reabrir" : "btn-cerrar"}">
+          ${p.estado === "CERRADO" ? "Reabrir" : "Cerrar"}
+        </button>
+      </td>
+    </tr>`;
+}
+
 function bind(container) {
+  container.querySelector("#form-periodos").onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put("/periodos/config", {
+        diaCorte: Number(container.querySelector("#in-corte").value),
+        diasGracia: Number(container.querySelector("#in-gracia").value),
+      });
+      await render(container);
+      toast("Configuración de periodos guardada.");
+    } catch (err) { toast(err.message, "danger"); }
+  };
+
+  for (const tr of container.querySelectorAll("tr[data-pid]")) {
+    const id = Number(tr.dataset.pid);
+    tr.querySelector(".btn-reabrir")?.addEventListener("click", async () => {
+      try {
+        await api.post(`/periodos/${id}/reabrir`);
+        await render(container);
+        toast("Periodo reabierto. Ya puedes registrar movimientos en él.");
+      } catch (err) { toast(err.message, "danger"); }
+    });
+    tr.querySelector(".btn-cerrar")?.addEventListener("click", async () => {
+      if (!confirmar("¿Cerrar este periodo? Quedará como solo lectura hasta que lo reabras.")) return;
+      try {
+        await api.post(`/periodos/${id}/cerrar`);
+        await render(container);
+        toast("Periodo cerrado.");
+      } catch (err) { toast(err.message, "danger"); }
+    });
+  }
+
   container.querySelector("#in-avatar").onchange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;

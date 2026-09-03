@@ -14,6 +14,8 @@ services:
       - ./docs/sql/migration_v5.sql:/docker-entrypoint-initdb.d/04-migration_v5.sql:ro
       - ./docs/sql/migration_v6.sql:/docker-entrypoint-initdb.d/05-migration_v6.sql:ro
       - ./docs/sql/migration_v7.sql:/docker-entrypoint-initdb.d/06-migration_v7.sql:ro
+      - ./docs/sql/migration_v8.sql:/docker-entrypoint-initdb.d/07-migration_v8.sql:ro
+      - ./docs/sql/migration_v9.sql:/docker-entrypoint-initdb.d/08-migration_v9.sql:ro
     # Sin techo, un pico de MySQL puede comerse la RAM del host y tumbar las demas
     # apps del server. 1G deja holgura sobre los ~440M que usa en reposo; con 512M
     # el kernel lo mataria por OOM en cuanto crezca la base.

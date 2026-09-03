@@ -13,6 +13,8 @@ let chart = null;
 let busqueda = "";
 let pagina = 1;
 
+const cerrado = () => periodo?.estado === "CERRADO";
+
 export async function render(container) {
   if (!categorias.length) categorias = await api.get("/categorias");
   await cargarPeriodo(container);
@@ -86,6 +88,7 @@ function cabecera(titulo) {
       <button class="btn btn-icon" id="btn-prev-mes" title="Mes anterior"><i class="bi bi-chevron-left"></i></button>
       <h1 class="h5 mb-0 fw-semibold">${esc(titulo)}</h1>
       <button class="btn btn-icon" id="btn-next-mes" title="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
+      ${cerrado() ? `<span class="chip chip-neutral"><i class="bi bi-lock me-1"></i>Cerrado</span>` : ""}
     </div>`;
 }
 
@@ -110,8 +113,8 @@ function vista() {
               <input type="search" class="form-control" id="buscar" placeholder="Buscar…">
             </div>
             <div class="d-flex gap-2">
-              <button class="btn btn-quiet btn-sm" id="btn-nuevo-ingreso"><i class="bi bi-plus-lg me-1 text-pos"></i>Ingreso</button>
-              <button class="btn btn-quiet btn-sm" id="btn-nuevo-gasto"><i class="bi bi-plus-lg me-1 text-neg"></i>Egreso</button>
+              <button class="btn btn-quiet btn-sm" id="btn-nuevo-ingreso" ${cerrado() ? "disabled" : ""}><i class="bi bi-plus-lg me-1 text-pos"></i>Ingreso</button>
+              <button class="btn btn-quiet btn-sm" id="btn-nuevo-gasto" ${cerrado() ? "disabled" : ""}><i class="bi bi-plus-lg me-1 text-neg"></i>Egreso</button>
             </div>
           </div>
           <div id="zona-tabla">${tablaHtml()}</div>
@@ -191,8 +194,8 @@ function filaHtml(m) {
       <td class="text-end numeric fw-medium ${esIngreso ? "text-pos" : ""}">${esIngreso ? "+" : "−"}${money(m.monto)}</td>
       <td class="text-end">
         <span class="row-actions">
-          ${ligadoADeuda ? "" : `<button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>`}
-          <button class="btn btn-icon danger btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
+          ${ligadoADeuda || cerrado() ? "" : `<button class="btn btn-icon btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>`}
+          ${cerrado() ? "" : `<button class="btn btn-icon danger btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>`}
         </span>
       </td>
     </tr>`;
@@ -258,7 +261,7 @@ function bindTabla(container) {
     const tipo = tr.dataset.tipo;
     tr.querySelector(".btn-editar")?.addEventListener("click", () =>
       tipo === "ingreso" ? formIngreso(container, ingresos.find(i => i.id === id)) : formGasto(container, gastos.find(g => g.id === id)));
-    tr.querySelector(".btn-eliminar").onclick = () => eliminar(container, tipo, id);
+    tr.querySelector(".btn-eliminar")?.addEventListener("click", () => eliminar(container, tipo, id));
   }
 }
 

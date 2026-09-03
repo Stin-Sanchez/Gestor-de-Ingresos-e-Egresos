@@ -100,10 +100,12 @@ function deudaCard(d) {
           <span class="${pagada ? "text-pos" : dir.clase} flex-shrink-0">${pagada ? "Completa" : money(d.saldoPendiente)}</span>
         </div>
 
-        <div class="d-flex gap-2 mt-auto">
+        <div class="d-flex gap-2 mt-auto flex-wrap">
           <button class="btn btn-primary btn-sm flex-grow-1 btn-pagar" ${pagada ? "disabled" : ""}>
             <i class="bi bi-cash-coin me-1"></i>${dir.accion}
           </button>
+          <button class="btn btn-quiet btn-sm btn-ampliar" title="${d.tipo === "DEBO" ? "Me prestaron más" : "Presté más"}"><i class="bi bi-plus-circle"></i></button>
+          <button class="btn btn-quiet btn-sm btn-editar" title="Editar"><i class="bi bi-pencil"></i></button>
           <button class="btn btn-quiet btn-sm btn-historial" title="Historial"><i class="bi bi-clock-history"></i></button>
           <button class="btn btn-quiet btn-sm btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
         </div>
@@ -112,7 +114,7 @@ function deudaCard(d) {
 }
 
 function bind(container) {
-  container.querySelector("#btn-nueva-deuda").onclick = () => formNuevaDeuda(container);
+  container.querySelector("#btn-nueva-deuda").onclick = () => formDeuda(container);
 
   for (const btn of container.querySelectorAll("[data-filtro]")) {
     btn.onclick = () => { filtro = btn.dataset.filtro; render(container); };
@@ -121,34 +123,45 @@ function bind(container) {
   for (const card of container.querySelectorAll("[data-did]")) {
     const d = deudas.find(x => x.id === Number(card.dataset.did));
     card.querySelector(".btn-pagar").onclick = () => formPago(container, d);
-    card.querySelector(".btn-historial").onclick = () => verHistorial(d);
+    card.querySelector(".btn-ampliar").onclick = () => formAmpliar(container, d);
+    card.querySelector(".btn-editar").onclick = () => formDeuda(container, d);
+    card.querySelector(".btn-historial").onclick = () => verHistorial(container, d);
     card.querySelector(".btn-eliminar").onclick = () => eliminar(container, d);
   }
 }
 
-function formNuevaDeuda(container) {
-  const body = openModal("Nueva deuda", `
+// Mismo formulario para crear y para corregir. Al editar, la direccion queda fija: los
+// pagos de una deuda que debo viven en gastos y los de una que me deben en ingresos, asi
+// que darle la vuelta dejaria su historial en la tabla equivocada.
+function formDeuda(container, d) {
+  const edicion = Boolean(d);
+  let tipo = d?.tipo ?? "DEBO";
+
+  const body = openModal(edicion ? `Editar — ${d.nombre}` : "Nueva deuda", `
+    ${edicion ? "" : `
     <div class="mb-3">
       <div class="seg">
         <button type="button" class="seg-btn active" data-tipo="DEBO">Yo debo</button>
         <button type="button" class="seg-btn" data-tipo="ME_DEBEN">Me deben</button>
       </div>
-    </div>
+    </div>`}
     <div class="row g-3">
       <div class="col-12"><label class="form-label" for="f-nombre">Concepto</label>
-        <input type="text" class="form-control" id="f-nombre" placeholder="Préstamo, tarjeta…" autofocus></div>
-      <div class="col-12"><label class="form-label" for="f-acreedor"><span id="lbl-contraparte">Acreedor</span></label>
-        <input type="text" class="form-control" id="f-acreedor" placeholder="Nombre de la persona o entidad"></div>
+        <input type="text" class="form-control" id="f-nombre" placeholder="Préstamo, tarjeta…" value="${esc(d?.nombre ?? "")}" autofocus></div>
+      <div class="col-12"><label class="form-label" for="f-acreedor"><span id="lbl-contraparte">${DIR[tipo].contraparte}</span></label>
+        <input type="text" class="form-control" id="f-acreedor" placeholder="Nombre de la persona o entidad" value="${esc(d?.acreedor ?? "")}"></div>
       <div class="col-12 col-sm-6"><label class="form-label" for="f-monto">Monto</label>
-        <input type="number" step="0.01" min="0.01" class="form-control" id="f-monto"></div>
+        <input type="number" step="0.01" min="0.01" class="form-control" id="f-monto" value="${d?.montoOriginal ?? ""}">
+        ${edicion && d.montoPagado > 0
+          ? `<div class="form-text">Ya llevas ${money(d.montoPagado)} pagados: no puedes bajarlo de ahí.</div>`
+          : ""}</div>
       <div class="col-12 col-sm-6"><label class="form-label" for="f-venc">Vencimiento</label>
-        <input type="date" class="form-control" id="f-venc"></div>
+        <input type="date" class="form-control" id="f-venc" value="${d?.fechaVencimiento ? dateInputValue(d.fechaVencimiento) : ""}"></div>
       <div class="col-12"><label class="form-label" for="f-desc">Nota</label>
-        <input type="text" class="form-control" id="f-desc" placeholder="Opcional"></div>
+        <input type="text" class="form-control" id="f-desc" placeholder="Opcional" value="${esc(d?.descripcion ?? "")}"></div>
       <div class="col-12"><button class="btn btn-primary w-100" id="f-guardar">Guardar</button></div>
     </div>`);
 
-  let tipo = "DEBO";
   for (const btn of body.querySelectorAll("[data-tipo]")) {
     btn.onclick = () => {
       tipo = btn.dataset.tipo;
@@ -164,14 +177,15 @@ function formNuevaDeuda(container) {
       acreedor: body.querySelector("#f-acreedor").value,
       montoOriginal: Number(body.querySelector("#f-monto").value),
       fechaVencimiento: body.querySelector("#f-venc").value || null,
-      fechaInicio: dateInputValue(),
+      fechaInicio: edicion ? dateInputValue(d.fechaInicio) : dateInputValue(),
       descripcion: body.querySelector("#f-desc").value,
     };
     try {
-      await api.post("/deudas", payload);
+      if (edicion) await api.put(`/deudas/${d.id}`, payload);
+      else await api.post("/deudas", payload);
       closeModal();
       await render(container);
-      toast("Deuda creada.");
+      toast(edicion ? "Deuda actualizada." : "Deuda creada.");
     } catch (e) { toast(e.message, "danger"); }
   };
 }
@@ -212,21 +226,98 @@ function formPago(container, d) {
   };
 }
 
-async function verHistorial(d) {
-  const pagos = await api.get(`/deudas/${d.id}/pagos`);
-  openModal(`Historial — ${d.nombre}`, `
+// Prestar mas sobre la deuda que ya existe, en vez de abrir otra a la misma persona.
+// No mueve el periodo: igual que al crear la deuda, el dinero solo se registra al pagarla.
+// Con "a" el mismo formulario corrige una ampliacion ya registrada.
+function formAmpliar(container, d, a) {
+  const prestamo = d.tipo === "DEBO";
+  const edicion = Boolean(a);
+  const titulo = edicion
+    ? `Editar ampliación — ${d.nombre}`
+    : `${prestamo ? "Me prestaron más" : "Presté más"} — ${d.nombre}`;
+
+  const body = openModal(titulo, `
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="text-muted-app" style="font-size:.8125rem">
+          Ahora ${prestamo ? "debes" : "te deben"} <span class="numeric">${money(d.saldoPendiente)}</span>
+          de <span class="numeric">${money(d.montoOriginal)}</span>.
+        </div>
+      </div>
+      <div class="col-7"><label class="form-label" for="f-monto">${edicion ? "Monto" : "Monto adicional"}</label>
+        <input type="number" step="0.01" min="0" class="form-control" id="f-monto" value="${a?.monto ?? ""}" autofocus></div>
+      <div class="col-5"><label class="form-label" for="f-fecha">Fecha</label>
+        <input type="date" class="form-control" id="f-fecha" value="${dateInputValue(a?.fecha)}"></div>
+      <div class="col-12"><label class="form-label" for="f-desc">Nota</label>
+        <input type="text" class="form-control" id="f-desc" placeholder="opcional" value="${esc(a?.descripcion ?? "")}">
+        <div class="form-text">No registra ningún movimiento en el periodo, solo cambia el total de la deuda.</div></div>
+      <div class="col-12"><button class="btn btn-primary w-100" id="f-guardar">${edicion ? "Guardar" : "Ampliar deuda"}</button></div>
+    </div>`);
+
+  body.querySelector("#f-guardar").onclick = async () => {
+    const payload = {
+      monto: Number(body.querySelector("#f-monto").value),
+      fecha: body.querySelector("#f-fecha").value,
+      descripcion: body.querySelector("#f-desc").value,
+    };
+    try {
+      if (edicion) await api.put(`/deudas/ampliaciones/${a.id}`, payload);
+      else await api.post(`/deudas/${d.id}/ampliaciones`, payload);
+      closeModal();
+      await refrescar(container, edicion ? d : null);
+      toast(edicion ? "Ampliación corregida." : "Deuda ampliada.");
+    } catch (e) { toast(e.message, "danger"); }
+  };
+}
+
+// Tras corregir desde el historial conviene volver a el, pero con la deuda recargada:
+// el total y el estado acaban de cambiar y la copia de la tarjeta ya esta vieja.
+async function refrescar(container, volverAlHistorialDe) {
+  await render(container);
+  if (!volverAlHistorialDe) return;
+  const fresca = deudas.find(x => x.id === volverAlHistorialDe.id);
+  if (fresca) await verHistorial(container, fresca);
+}
+
+async function verHistorial(container, d) {
+  const movimientos = await api.get(`/deudas/${d.id}/movimientos`);
+  const body = openModal(`Historial — ${d.nombre}`, `
     <div class="table-responsive">
       <table class="table table-hover">
-        <thead><tr><th style="width:5rem">Fecha</th><th>Nota</th><th class="text-end">Monto</th></tr></thead>
+        <thead><tr><th style="width:5rem">Fecha</th><th>Nota</th><th class="text-end">Monto</th><th style="width:4.5rem"></th></tr></thead>
         <tbody>
-          ${pagos.map(p => `<tr>
-              <td class="text-muted-app numeric" style="font-size:.8125rem">${fechaCorta(p.fecha)}</td>
-              <td>${esc(p.descripcion) || "<span class='text-muted-app'>—</span>"}</td>
-              <td class="text-end numeric fw-medium ${DIR[d.tipo].clase}">${money(p.monto)}</td>
-            </tr>`).join("") || `<tr><td colspan="3" class="empty-state">Sin movimientos todavía</td></tr>`}
+          ${movimientos.map(m => `<tr ${m.esAmpliacion ? `data-aid="${m.id}"` : ""}>
+              <td class="text-muted-app numeric" style="font-size:.8125rem">${fechaCorta(m.fecha)}</td>
+              <td>
+                ${esc(m.descripcion) || "<span class='text-muted-app'>—</span>"}
+                ${m.esAmpliacion ? `<span class="chip chip-neutral ms-1">Ampliación</span>` : ""}
+              </td>
+              <td class="text-end numeric fw-medium ${m.esAmpliacion ? "text-muted-app" : DIR[d.tipo].clase}">
+                ${m.esAmpliacion ? "+" : ""}${money(m.monto)}
+              </td>
+              <td class="text-end">${m.esAmpliacion ? `<span class="row-actions">
+                <button class="btn btn-icon btn-editar-amp" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-icon danger btn-borrar-amp" title="Eliminar"><i class="bi bi-trash"></i></button>
+              </span>` : ""}</td>
+            </tr>`).join("") || `<tr><td colspan="4" class="empty-state">Sin movimientos todavía</td></tr>`}
         </tbody>
       </table>
+      <div class="form-text mt-2">Los pagos se corrigen desde Movimientos, en el periodo donde se registraron.</div>
     </div>`);
+
+  for (const tr of body.querySelectorAll("tr[data-aid]")) {
+    const a = movimientos.find(m => m.esAmpliacion && m.id === Number(tr.dataset.aid));
+    tr.querySelector(".btn-editar-amp").onclick = () => formAmpliar(container, d, a);
+    tr.querySelector(".btn-borrar-amp").onclick = async () => {
+      if (!confirmar(`¿Eliminar esta ampliación de ${money(a.monto)}? La deuda bajará en ese monto.`)) return;
+      try {
+        await api.del(`/deudas/ampliaciones/${a.id}`);
+        closeModal();
+        await refrescar(container, d);
+        toast("Ampliación eliminada.");
+      } catch (e) { toast(e.message, "danger"); }
+    };
+  }
 }
 
 async function eliminar(container, d) {

@@ -3,14 +3,13 @@ using GestorIngresosEgresos.Api.Repository;
 
 namespace GestorIngresosEgresos.Api.Services;
 
-public class IngresoService(IngresoRepository repo, PeriodoRepository periodoRepo, DeudaRepository deudaRepo)
+public class IngresoService(IngresoRepository repo, PeriodoService periodos, DeudaRepository deudaRepo)
 {
     public List<Ingreso> ObtenerPorPeriodo(int usuarioId, int periodoId) => repo.ObtenerPorPeriodo(usuarioId, periodoId);
 
     public Ingreso Guardar(int usuarioId, Ingreso ing)
     {
-        if (periodoRepo.ObtenerPorId(usuarioId, ing.PeriodoId) is null)
-            throw new KeyNotFoundException("Periodo no encontrado.");
+        periodos.ExigirAbierto(usuarioId, ing.PeriodoId);
         if (ing.Monto <= 0)
             throw new ArgumentException("El monto debe ser mayor a cero.");
         if (string.IsNullOrWhiteSpace(ing.Descripcion))
@@ -23,6 +22,8 @@ public class IngresoService(IngresoRepository repo, PeriodoRepository periodoRep
     {
         var actual = repo.ObtenerPorId(usuarioId, ing.Id)
             ?? throw new KeyNotFoundException("Ingreso no encontrado.");
+        // El periodo del ingreso guardado, no el del body: ver GastoService.Actualizar.
+        periodos.ExigirAbierto(usuarioId, actual.PeriodoId);
         // Editar el monto aqui dejaria la deuda descuadrada: el saldo cobrado se lleva
         // en la deuda, no en el ingreso. Para corregir hay que borrarlo y volver a cobrar.
         if (actual.DeudaId.HasValue)
@@ -35,6 +36,7 @@ public class IngresoService(IngresoRepository repo, PeriodoRepository periodoRep
     {
         var ing = repo.ObtenerPorId(usuarioId, id)
             ?? throw new KeyNotFoundException("Ingreso no encontrado.");
+        periodos.ExigirAbierto(usuarioId, ing.PeriodoId);
 
         // Borrar un cobro tiene que devolverle el monto a la deuda, o quedaria
         // reportando mas cobrado de lo que realmente entro.

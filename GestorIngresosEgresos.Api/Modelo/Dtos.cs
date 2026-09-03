@@ -13,6 +13,8 @@ public record DesactivarTotpRequest(string Password, string Codigo);
 public record PerfilRequest(string? Email);
 public record PasswordRequest(string Actual, string Nueva);
 public record AbonoRequest(int PeriodoId, int? CategoriaId, decimal Monto, string? Descripcion);
+public record ConfigPeriodosRequest(int DiaCorte, int DiasGracia);
+public record AmpliacionRequest(decimal Monto, DateTime Fecha, string? Descripcion);
 
 public record IngresoRequest(decimal Monto, DateTime Fecha, string? Descripcion, TipoIngreso Tipo)
 {
@@ -77,10 +79,10 @@ public record UsuarioDto(int Id, string Username, string? Email, string? Avatar,
 
 public record PeriodoDto(
     int Id, string Nombre, DateTime FechaInicio, DateTime FechaFin,
-    decimal SaldoInicial, EstadoPeriodo Estado, bool EsActual)
+    decimal SaldoInicial, EstadoPeriodo Estado, bool EsActual, bool Reabierto)
 {
     public static PeriodoDto De(Periodo p) =>
-        new(p.Id, p.Nombre, p.FechaInicio, p.FechaFin, p.SaldoInicial, p.Estado, p.EsActual);
+        new(p.Id, p.Nombre, p.FechaInicio, p.FechaFin, p.SaldoInicial, p.Estado, p.EsActual, p.Reabierto);
 }
 
 public record IngresoDto(

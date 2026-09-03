@@ -3,15 +3,14 @@ using GestorIngresosEgresos.Api.Repository;
 
 namespace GestorIngresosEgresos.Api.Services;
 
-public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, PresupuestoRepository presRepo, CategoriaRepository catRepo, DeudaRepository deudaRepo)
+public class GastoService(GastoRepository repo, PeriodoService periodos, PresupuestoRepository presRepo, CategoriaRepository catRepo, DeudaRepository deudaRepo)
 {
     public List<Gasto> ObtenerPorPeriodo(int usuarioId, int periodoId) => repo.ObtenerPorPeriodo(usuarioId, periodoId);
     public List<CategoriaGasto> ObtenerCategorias() => catRepo.ObtenerTodas();
 
     public Gasto Guardar(int usuarioId, Gasto g)
     {
-        if (periodoRepo.ObtenerPorId(usuarioId, g.PeriodoId) is null)
-            throw new KeyNotFoundException("Periodo no encontrado.");
+        periodos.ExigirAbierto(usuarioId, g.PeriodoId);
         if (g.Monto <= 0)
             throw new ArgumentException("El monto debe ser mayor a cero.");
         if (string.IsNullOrWhiteSpace(g.Descripcion))
@@ -24,6 +23,9 @@ public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, P
     {
         var actual = repo.ObtenerPorId(usuarioId, g.Id)
             ?? throw new KeyNotFoundException("Gasto no encontrado.");
+        // El periodo del gasto, no el del body: si no, editar un gasto de un periodo
+        // cerrado solo pediria mandar el id de uno abierto para saltarse el candado.
+        periodos.ExigirAbierto(usuarioId, actual.PeriodoId);
         // Editar el monto aqui dejaria la deuda descuadrada: el saldo pagado se lleva
         // en la deuda, no en el gasto. Para corregir hay que borrarlo y volver a abonar.
         if (actual.DeudaId.HasValue)
@@ -40,6 +42,7 @@ public class GastoService(GastoRepository repo, PeriodoRepository periodoRepo, P
     {
         var g = repo.ObtenerPorId(usuarioId, id)
             ?? throw new KeyNotFoundException("Gasto no encontrado.");
+        periodos.ExigirAbierto(usuarioId, g.PeriodoId);
 
         // Borrar un abono tiene que devolverle el monto a la deuda, o quedaria
         // reportando mas pagado de lo que realmente se pago.

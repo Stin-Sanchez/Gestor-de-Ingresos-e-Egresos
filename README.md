@@ -92,6 +92,8 @@ Los scripts de esquema viven en `docs/sql/` y deben aplicarse en orden sobre `Ge
 5. `migration_v5.sql` — agrega correo, avatar y segundo factor TOTP a `usuarios`.
 6. `migration_v6.sql` — deudas en dos direcciones (`tipo` en `deudas`, `deuda_id` en `ingresos`).
 7. `migration_v7.sql` — convierte `periodos.sueldo_base` en un ingreso de tipo `SUELDO` y elimina la columna.
+8. `migration_v8.sql` — ciclo de vida del periodo: `dia_corte` y `dias_gracia` en `usuarios`, `reabierto` en `periodos`. Un periodo cerrado pasa a ser solo lectura.
+9. `migration_v9.sql` — agrega `deuda_ampliaciones`: prestar mas sobre una deuda existente sube `monto_original` y queda en el historial.
 
 ---
 *Hecho para mantener las finanzas claras, sin complicaciones.*
